@@ -60,6 +60,7 @@
 #include "lttng-relayd.h"
 #include "live.h"
 #include "health-relayd.h"
+#include "testpoint.h"
 
 /* command line options */
 char *opt_output_path;
@@ -754,6 +755,10 @@ void *relay_thread_listener(void *data)
 
 	lttng_relay_notify_ready();
 
+	if (testpoint(relayd_thread_listener)) {
+		goto error_testpoint;
+	}
+
 	while (1) {
 		health_code_update();
 
@@ -854,6 +859,7 @@ restart:
 exit:
 error:
 error_poll_add:
+error_testpoint:
 	lttng_poll_clean(&events);
 error_create_poll:
 	if (data_sock->fd >= 0) {
@@ -895,6 +901,10 @@ void *relay_thread_dispatcher(void *data)
 	DBG("[thread] Relay dispatcher started");
 
 	health_register(health_relayd, HEALTH_RELAYD_TYPE_DISPATCHER);
+
+	if (testpoint(relayd_thread_dispatcher)) {
+		goto error_testpoint;
+	}
 
 	health_code_update();
 
@@ -942,6 +952,7 @@ void *relay_thread_dispatcher(void *data)
 	err = 0;
 
 error:
+error_testpoint:
 	if (err) {
 		health_error();
 		ERR("Health error occurred in %s", __func__);
@@ -2559,6 +2570,10 @@ void *relay_thread_worker(void *data)
 
 	health_register(health_relayd, HEALTH_RELAYD_TYPE_WORKER);
 
+	if (testpoint(relayd_thread_worker)) {
+		goto error_testpoint;
+	}
+
 	health_code_update();
 
 	/* table of connections indexed on socket */
@@ -2820,6 +2835,7 @@ relay_connections_ht_error:
 	}
 	DBG("Worker thread cleanup complete");
 	free(data_buffer);
+error_testpoint:
 	if (err) {
 		health_error();
 		ERR("Health error occurred in %s", __func__);

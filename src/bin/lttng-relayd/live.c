@@ -57,6 +57,7 @@
 #include "lttng-viewer.h"
 #include "utils.h"
 #include "health-relayd.h"
+#include "testpoint.h"
 
 static struct lttng_uri *live_uri;
 
@@ -224,6 +225,10 @@ void *thread_listener(void *data)
 
 	lttng_relay_notify_ready();
 
+	if (testpoint(relayd_thread_live_listener)) {
+		goto error_testpoint;
+	}
+
 	while (1) {
 		health_code_update();
 
@@ -311,6 +316,7 @@ restart:
 exit:
 error:
 error_poll_add:
+error_testpoint:
 	lttng_poll_clean(&events);
 error_create_poll:
 	if (live_control_sock->fd >= 0) {
@@ -344,6 +350,10 @@ void *thread_dispatcher(void *data)
 	DBG("[thread] Live viewer relay dispatcher started");
 
 	health_register(health_relayd, HEALTH_RELAYD_TYPE_LIVE_DISPATCHER);
+
+	if (testpoint(relayd_thread_live_dispatcher)) {
+		goto error_testpoint;
+	}
 
 	health_code_update();
 
@@ -393,6 +403,7 @@ void *thread_dispatcher(void *data)
 	err = 0;
 
 error:
+error_testpoint:
 	if (err) {
 		health_error();
 		ERR("Health error occurred in %s", __func__);
@@ -1794,6 +1805,10 @@ void *thread_worker(void *data)
 
 	health_register(health_relayd, HEALTH_RELAYD_TYPE_LIVE_WORKER);
 
+	if (testpoint(relayd_thread_live_worker)) {
+		goto error_testpoint;
+	}
+
 	/* table of connections indexed on socket */
 	relay_connections_ht = lttng_ht_new(0, LTTNG_HT_TYPE_ULONG);
 	if (!relay_connections_ht) {
@@ -1949,6 +1964,7 @@ relay_connections_ht_error:
 		DBG("Viewer worker thread exited with error");
 	}
 	DBG("Viewer worker thread cleanup complete");
+error_testpoint:
 	if (err) {
 		health_error();
 		ERR("Health error occurred in %s", __func__);
