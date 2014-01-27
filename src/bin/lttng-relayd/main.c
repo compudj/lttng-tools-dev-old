@@ -878,7 +878,6 @@ error_sock_control:
 	}
 	health_unregister(health_relayd);
 	DBG("Relay listener thread cleanup complete");
-	stop_threads();
 	return NULL;
 }
 
@@ -949,7 +948,6 @@ error:
 	}
 	health_unregister(health_relayd);
 	DBG("Dispatch thread dying");
-	stop_threads();
 	return NULL;
 }
 
@@ -2828,7 +2826,6 @@ relay_connections_ht_error:
 	}
 	health_unregister(health_relayd);
 	rcu_unregister_thread();
-	stop_threads();
 	return NULL;
 }
 
