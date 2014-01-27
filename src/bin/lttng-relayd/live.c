@@ -94,38 +94,9 @@ void cleanup(void)
 	free(live_uri);
 }
 
-/*
- * Write to writable pipe used to notify a thread.
- */
-static
-int notify_thread_pipe(int wpipe)
+void live_stop_threads(void)
 {
-	ssize_t ret;
-
-	ret = lttng_write(wpipe, "!", 1);
-	if (ret < 1) {
-		PERROR("write poll pipe");
-	}
-
-	return (int) ret;
-}
-
-/*
- * Stop all threads by closing the thread quit pipe.
- */
-static
-void stop_threads(void)
-{
-	int ret;
-
-	/* Stopping all threads */
-	DBG("Terminating all live threads");
-	ret = notify_thread_pipe(thread_quit_pipe[1]);
-	if (ret < 0) {
-		ERR("write error on thread quit pipe");
-	}
-
-	/* Dispatch thread */
+	/* Live dispatch thread */
 	CMM_STORE_SHARED(live_dispatch_thread_exit, 1);
 	futex_nto1_wake(&viewer_cmd_queue.futex);
 }
@@ -356,7 +327,6 @@ error_sock_control:
 	}
 	health_unregister(health_relayd);
 	DBG("Live viewer listener thread cleanup complete");
-	stop_threads();
 	return NULL;
 }
 
@@ -429,7 +399,6 @@ error:
 	}
 	health_unregister(health_relayd);
 	DBG("Live viewer dispatch thread dying");
-	stop_threads();
 	return NULL;
 }
 
@@ -1985,7 +1954,6 @@ relay_connections_ht_error:
 		ERR("Health error occurred in %s", __func__);
 	}
 	health_unregister(health_relayd);
-	stop_threads();
 	rcu_unregister_thread();
 	return NULL;
 }
@@ -2003,12 +1971,10 @@ static int create_relay_cmd_pipe(void)
 	return ret;
 }
 
-void live_stop_threads(void)
+void live_join_threads(void)
 {
 	int ret;
 	void *status;
-
-	stop_threads();
 
 	ret = pthread_join(live_listener_thread, &status);
 	if (ret != 0) {

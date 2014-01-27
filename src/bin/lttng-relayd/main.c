@@ -496,6 +496,8 @@ void stop_threads(void)
 	/* Dispatch thread */
 	CMM_STORE_SHARED(dispatch_thread_exit, 1);
 	futex_nto1_wake(&relay_cmd_queue.futex);
+
+	live_stop_threads();
 }
 
 /*
@@ -3032,7 +3034,7 @@ exit_dispatcher:
 	}
 
 	/*
-	 * Stop live threads only after joining other threads.
+	 * Join live threads only after joining other threads.
 	 */
 	live_stop_threads();
 
