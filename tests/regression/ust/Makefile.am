@@ -1,7 +1,7 @@
 if HAVE_LIBLTTNG_UST_CTL
 SUBDIRS = nprocesses high-throughput low-throughput before-after multi-session \
 		overlap buffers-pid linking daemon exit-fast fork libc-wrapper \
-		periodical-metadata-flush java-jul
+		periodical-metadata-flush java-jul global-type-declarations
 
 EXTRA_DIST = test_event_basic test_event_wildcard
 
