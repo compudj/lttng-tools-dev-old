@@ -383,8 +383,7 @@ int _lttng_one_global_type_statedump(struct ust_registry_session *session,
 			int j, len;
 
 			ret = lttng_metadata_printf(session,
-					"	\"",
-					entry.string);
+					"	\"");
 			if (ret)
 				return ret;
 
@@ -417,8 +416,7 @@ int _lttng_one_global_type_statedump(struct ust_registry_session *session,
 				}
 			}
 			ret = lttng_metadata_printf(session,
-					"\" = ",
-					entry.string);
+					"\" = ");
 			if (ret)
 				return ret;
 			if (entry.start == entry.end) {
