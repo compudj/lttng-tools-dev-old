@@ -19,6 +19,7 @@
 #define __USE_LINUX_IOCTL_DEFS
 #include <sys/ioctl.h>
 #include <string.h>
+#include <common/align.h>
 
 #include "kernel-ctl.h"
 #include "kernel-ioctl.h"
@@ -161,6 +162,43 @@ int kernctl_disable_syscall(int fd, const char *syscall_name)
 	event.instrumentation = LTTNG_KERNEL_SYSCALL;
 	event.u.syscall.enable = 0;
 	return ioctl(fd, LTTNG_KERNEL_EVENT, &event);
+}
+
+int kernctl_syscall_mask(int fd, char **syscall_mask, uint32_t *nr_bits)
+{
+	struct lttng_kernel_syscall_mask kmask_len, *kmask;
+	size_t array_alloc_len;
+	char *new_mask;
+	int ret = 0;
+
+	if (!syscall_mask)
+		return -1;
+	if (!nr_bits)
+		return -1;
+
+	kmask_len.len = 0;
+	ret = ioctl(fd, LTTNG_KERNEL_SYSCALL_MASK, &kmask_len);
+	if (ret)
+		return ret;
+	array_alloc_len = ALIGN(kmask_len.len, 8) >> 3;
+	kmask = zmalloc(sizeof(*kmask) + array_alloc_len);
+	if (!kmask)
+		return -1;
+	kmask->len = kmask_len.len;
+	ret = ioctl(fd, LTTNG_KERNEL_SYSCALL_MASK, kmask);
+	if (ret)
+		goto end;
+	new_mask = realloc(syscall_mask, array_alloc_len);
+	if (!new_mask) {
+		ret = -1;
+		goto end;
+	}
+	memcpy(new_mask, kmask->mask, array_alloc_len);
+	*syscall_mask = new_mask;
+	*nr_bits = kmask->len;
+end:
+	free(kmask);
+	return ret;
 }
 
 int kernctl_create_stream(int fd)
