@@ -216,6 +216,56 @@ error:
 }
 
 /*
+ * Add PID filter for a channel from the kernel session.
+ */
+int channel_kernel_filter_add_pid(struct ltt_kernel_channel *kchan,
+		int pid)
+{
+	int ret;
+
+	assert(kchan);
+
+	ret = kernel_filter_add_pid(pid, kchan);
+	if (ret < 0) {
+		ret = LTTNG_ERR_KERN_ENABLE_FAIL;
+		goto error;
+	}
+
+	DBG("Kernel PID filter %d add for channel %s.",
+			pid, kchan->channel->name);
+
+	ret = LTTNG_OK;
+
+error:
+	return ret;
+}
+
+/*
+ * Remove PID filter from a channel from the kernel session.
+ */
+int channel_kernel_filter_del_pid(struct ltt_kernel_channel *kchan,
+		int pid)
+{
+	int ret;
+
+	assert(kchan);
+
+	ret = kernel_filter_del_pid(pid, kchan);
+	if (ret < 0) {
+		ret = LTTNG_ERR_KERN_ENABLE_FAIL;
+		goto error;
+	}
+
+	DBG("Kernel PID filter %d del for channel %s.",
+			pid, kchan->channel->name);
+
+	ret = LTTNG_OK;
+
+error:
+	return ret;
+}
+
+/*
  * Enable UST channel for session and domain.
  */
 int channel_ust_enable(struct ltt_ust_session *usess,

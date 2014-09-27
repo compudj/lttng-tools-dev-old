@@ -58,6 +58,10 @@ int kernctl_disable_syscall(int fd, const char *syscall_name);
 int kernctl_syscall_mask(int fd, char **syscall_mask,
 		uint32_t *nr_bits);
 
+/* Per process ID filtering can be applied to channel FD */
+int kernctl_filter_add_pid(int fd, int pid);
+int kernctl_filter_del_pid(int fd, int pid);
+
 /* Buffer operations */
 
 /* For mmap mode, readable without "get" operation */

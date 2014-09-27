@@ -1268,6 +1268,72 @@ int lttng_disable_channel(struct lttng_handle *handle, const char *name)
 }
 
 /*
+ *  Add PID filter to channel per domain
+ *  Return 0 on success else a negative LTTng error code.
+ */
+int lttng_add_pid_filter(struct lttng_handle *handle,
+		const char *channel_name,
+		int pid)
+{
+	struct lttcomm_session_msg lsm;
+
+	/*
+	 * NULL arguments are forbidden. No default values.
+	 */
+	if (handle == NULL || channel_name == NULL) {
+		return -LTTNG_ERR_INVALID;
+	}
+
+	memset(&lsm, 0, sizeof(lsm));
+
+	lttng_ctl_copy_string(lsm.u.pid_filter.channel_name, channel_name,
+		sizeof(lsm.u.pid_filter.channel_name));
+	lsm.u.pid_filter.channel_name[sizeof(lsm.u.pid_filter.channel_name- 1)] = '\0';
+		
+	lsm.cmd_type = LTTNG_ADD_PID_FILTER;
+
+	lttng_ctl_copy_lttng_domain(&lsm.domain, &handle->domain);
+
+	lttng_ctl_copy_string(lsm.session.name, handle->session_name,
+			sizeof(lsm.session.name));
+
+	return lttng_ctl_ask_sessiond(&lsm, NULL);
+}
+
+/*
+ *  Remove PID filter from channel per domain
+ *  Return 0 on success else a negative LTTng error code.
+ */
+int lttng_del_pid_filter(struct lttng_handle *handle,
+		const char *channel_name,
+		int pid)
+{
+	struct lttcomm_session_msg lsm;
+
+	/*
+	 * NULL arguments are forbidden. No default values.
+	 */
+	if (handle == NULL || channel_name == NULL) {
+		return -LTTNG_ERR_INVALID;
+	}
+
+	memset(&lsm, 0, sizeof(lsm));
+
+	lttng_ctl_copy_string(lsm.u.pid_filter.channel_name, channel_name,
+		sizeof(lsm.u.pid_filter.channel_name));
+	lsm.u.pid_filter.channel_name[sizeof(lsm.u.pid_filter.channel_name- 1)] = '\0';
+		
+	lsm.cmd_type = LTTNG_DEL_PID_FILTER;
+
+	lttng_ctl_copy_lttng_domain(&lsm.domain, &handle->domain);
+
+	lttng_ctl_copy_string(lsm.session.name, handle->session_name,
+			sizeof(lsm.session.name));
+
+	return lttng_ctl_ask_sessiond(&lsm, NULL);
+}
+
+/*
  *  Lists all available tracepoints of domain.
  *  Sets the contents of the events array.
  *  Returns the number of lttng_event entries in events;

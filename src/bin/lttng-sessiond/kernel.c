@@ -363,6 +363,18 @@ int kernel_disable_syscall(const char *syscall_name,
 	return kernctl_disable_syscall(channel->fd, syscall_name);
 }
 
+int kernel_filter_add_pid(int pid,
+		struct ltt_kernel_channel *channel)
+{
+	return kernctl_filter_add_pid(channel->fd, pid);
+}
+
+int kernel_filter_del_pid(int pid,
+		struct ltt_kernel_channel *channel)
+{
+	return kernctl_filter_del_pid(channel->fd, pid);
+}
+
 /*
  * Create kernel metadata, open from the kernel tracer and add it to the
  * kernel session.

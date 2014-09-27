@@ -3133,6 +3133,22 @@ skip_domain:
 				&cmd_ctx->lsm->u.channel.chan, kernel_poll_pipe[1]);
 		break;
 	}
+	case LTTNG_ADD_PID_FILTER:
+	{
+		ret = cmd_add_pid_filter(cmd_ctx->session,
+				cmd_ctx->lsm->domain.type,
+				cmd_ctx->lsm->u.pid_filter.channel_name,
+				cmd_ctx->lsm->u.pid_filter.pid);
+		break;
+	}
+	case LTTNG_DEL_PID_FILTER:
+	{
+		ret = cmd_del_pid_filter(cmd_ctx->session,
+				cmd_ctx->lsm->domain.type,
+				cmd_ctx->lsm->u.pid_filter.channel_name,
+				cmd_ctx->lsm->u.pid_filter.pid);
+		break;
+	}
 	case LTTNG_ENABLE_EVENT:
 	{
 		struct lttng_event_exclusion *exclusion = NULL;

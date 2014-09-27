@@ -201,6 +201,16 @@ end:
 	return ret;
 }
 
+int kernctl_filter_add_pid(int fd, int pid)
+{
+	return ioctl(fd, LTTNG_KERNEL_FILTER_ADD_PID, pid);
+}
+
+int kernctl_filter_del_pid(int fd, int pid)
+{
+	return ioctl(fd, LTTNG_KERNEL_FILTER_DEL_PID, pid);
+}
+
 int kernctl_create_stream(int fd)
 {
 	return compat_ioctl_no_arg(fd, LTTNG_KERNEL_OLD_STREAM,

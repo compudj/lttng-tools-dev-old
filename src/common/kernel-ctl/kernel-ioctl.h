@@ -119,6 +119,10 @@
 	_IOW(0xF6, 0x63, struct lttng_kernel_event)
 #define LTTNG_KERNEL_SYSCALL_MASK		\
 	_IOWR(0xF6, 0x64, struct lttng_kernel_syscall_mask)
+#define LTTNG_KERNEL_FILTER_ADD_PID		\
+	_IOR(0xF6, 0x65, int32_t)
+#define LTTNG_KERNEL_FILTER_DEL_PID		\
+	_IOR(0xF6, 0x66, int32_t)
 
 /* Event and Channel FD ioctl */
 #define LTTNG_KERNEL_CONTEXT			\

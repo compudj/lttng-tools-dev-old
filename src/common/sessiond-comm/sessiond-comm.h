@@ -91,6 +91,9 @@ enum lttcomm_sessiond_command {
 	LTTNG_CREATE_SESSION_SNAPSHOT       = 29,
 	LTTNG_CREATE_SESSION_LIVE           = 30,
 	LTTNG_SAVE_SESSION                  = 31,
+
+	LTTNG_ADD_PID_FILTER                = 32,
+	LTTNG_DEL_PID_FILTER                = 33,
 };
 
 enum lttcomm_relayd_command {
@@ -296,6 +299,10 @@ struct lttcomm_session_msg {
 		struct {
 			struct lttng_save_session_attr attr; /* struct already packed */
 		} LTTNG_PACKED save_session;
+		struct {
+			char channel_name[LTTNG_SYMBOL_NAME_LEN];
+			uint32_t pid;
+		} pid_filter;
 	} u;
 } LTTNG_PACKED;
 

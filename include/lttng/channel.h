@@ -101,6 +101,24 @@ extern int lttng_disable_channel(struct lttng_handle *handle,
 extern void lttng_channel_set_default_attr(struct lttng_domain *domain,
 		struct lttng_channel_attr *attr);
 
+/*
+ * Add PID filter to a channel.
+ *
+ * Return 0 on success else a negative LTTng error code.
+ */
+extern int lttng_add_pid_filter(struct lttng_handle *handle,
+		const char *channel_name,
+		int pid);
+
+/*
+ * Add PID filter to a channel.
+ *
+ * Return 0 on success else a negative LTTng error code.
+ */
+extern int lttng_del_pid_filter(struct lttng_handle *handle,
+		const char *channel_name,
+		int pid);
+
 #ifdef __cplusplus
 }
 #endif

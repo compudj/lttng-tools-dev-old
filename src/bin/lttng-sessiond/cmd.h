@@ -37,9 +37,12 @@ int cmd_destroy_session(struct ltt_session *session, int wpipe);
 /* Channel commands */
 int cmd_disable_channel(struct ltt_session *session, int domain,
 		char *channel_name);
-
 int cmd_enable_channel(struct ltt_session *session,
 		struct lttng_domain *domain, struct lttng_channel *attr, int wpipe);
+int cmd_add_pid_filter(struct ltt_session *session, int domain,
+		char *channel_name, int pid);
+int cmd_del_pid_filter(struct ltt_session *session, int domain,
+		char *channel_name, int pid);
 
 /* Event commands */
 int cmd_disable_event(struct ltt_session *session, int domain,

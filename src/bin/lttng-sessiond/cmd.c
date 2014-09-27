@@ -908,6 +908,128 @@ error:
 }
 
 /*
+ * Command LTTNG_ADD_PID_FILTER_CHANNEL processed by the client thread.
+ */
+int cmd_add_pid_filter(struct ltt_session *session, int domain,
+		char *channel_name, int pid)
+{
+	int ret;
+	struct ltt_ust_session *usess;
+
+	rcu_read_lock();
+
+	switch (domain) {
+	case LTTNG_DOMAIN_KERNEL:
+	{
+		struct ltt_kernel_channel *kchan;
+		struct ltt_kernel_session *ksess;
+
+		ksess = session->kernel_session;
+
+		/*
+		 * If a non-default channel has been created in the
+		 * session, explicitely require that -c chan_name needs
+		 * to be provided.
+		 */
+		if (ksess->has_non_default_channel && channel_name[0] == '\0') {
+			ret = LTTNG_ERR_NEED_CHANNEL_NAME;
+			goto error;
+		}
+
+		kchan = trace_kernel_get_channel_by_name(channel_name, ksess);
+		if (kchan == NULL) {
+			ret = LTTNG_ERR_KERN_CHAN_NOT_FOUND;
+			goto error;
+		}
+
+		ret = channel_kernel_filter_add_pid(kchan, pid);
+		if (ret != LTTNG_OK) {
+			goto error;
+		}
+
+		kernel_wait_quiescent(kernel_tracer_fd);
+		break;
+	}
+#if 0
+	case LTTNG_DOMAIN_UST:
+	case LTTNG_DOMAIN_UST_PID_FOLLOW_CHILDREN:
+	case LTTNG_DOMAIN_UST_EXEC_NAME:
+	case LTTNG_DOMAIN_UST_PID:
+#endif
+	default:
+		ret = LTTNG_ERR_UNKNOWN_DOMAIN;
+		goto error;
+	}
+
+	ret = LTTNG_OK;
+
+error:
+	rcu_read_unlock();
+	return ret;
+}
+
+/*
+ * Command LTTNG_DEL_PID_FILTER_CHANNEL processed by the client thread.
+ */
+int cmd_del_pid_filter(struct ltt_session *session, int domain,
+		char *channel_name, int pid)
+{
+	int ret;
+	struct ltt_ust_session *usess;
+
+	rcu_read_lock();
+
+	switch (domain) {
+	case LTTNG_DOMAIN_KERNEL:
+	{
+		struct ltt_kernel_channel *kchan;
+		struct ltt_kernel_session *ksess;
+
+		ksess = session->kernel_session;
+
+		/*
+		 * If a non-default channel has been created in the
+		 * session, explicitely require that -c chan_name needs
+		 * to be provided.
+		 */
+		if (ksess->has_non_default_channel && channel_name[0] == '\0') {
+			ret = LTTNG_ERR_NEED_CHANNEL_NAME;
+			goto error;
+		}
+
+		kchan = trace_kernel_get_channel_by_name(channel_name, ksess);
+		if (kchan == NULL) {
+			ret = LTTNG_ERR_KERN_CHAN_NOT_FOUND;
+			goto error;
+		}
+
+		ret = channel_kernel_filter_del_pid(kchan, pid);
+		if (ret != LTTNG_OK) {
+			goto error;
+		}
+
+		kernel_wait_quiescent(kernel_tracer_fd);
+		break;
+	}
+#if 0
+	case LTTNG_DOMAIN_UST:
+	case LTTNG_DOMAIN_UST_PID_FOLLOW_CHILDREN:
+	case LTTNG_DOMAIN_UST_EXEC_NAME:
+	case LTTNG_DOMAIN_UST_PID:
+#endif
+	default:
+		ret = LTTNG_ERR_UNKNOWN_DOMAIN;
+		goto error;
+	}
+
+	ret = LTTNG_OK;
+
+error:
+	rcu_read_unlock();
+	return ret;
+}
+
+/*
  * Command LTTNG_ENABLE_CHANNEL processed by the client thread.
  *
  * The wpipe arguments is used as a notifier for the kernel thread.
