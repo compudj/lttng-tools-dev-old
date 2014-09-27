@@ -91,6 +91,9 @@ enum lttcomm_sessiond_command {
 	LTTNG_CREATE_SESSION_SNAPSHOT       = 29,
 	LTTNG_CREATE_SESSION_LIVE           = 30,
 	LTTNG_SAVE_SESSION                  = 31,
+
+	LTTNG_TRACK_PID                     = 32,
+	LTTNG_UNTRACK_PID                   = 33,
 };
 
 enum lttcomm_relayd_command {
@@ -296,6 +299,9 @@ struct lttcomm_session_msg {
 		struct {
 			struct lttng_save_session_attr attr; /* struct already packed */
 		} LTTNG_PACKED save_session;
+		struct {
+			uint32_t pid;
+		} LTTNG_PACKED pid_tracker;
 	} u;
 } LTTNG_PACKED;
 
