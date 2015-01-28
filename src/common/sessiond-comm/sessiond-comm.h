@@ -94,6 +94,7 @@ enum lttcomm_sessiond_command {
 
 	LTTNG_TRACK_PID                     = 32,
 	LTTNG_UNTRACK_PID                   = 33,
+	LTTNG_LIST_TRACKER_PIDS             = 34,
 };
 
 enum lttcomm_relayd_command {
