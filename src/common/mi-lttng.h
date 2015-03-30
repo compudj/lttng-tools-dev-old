@@ -197,10 +197,11 @@ const char *mi_lttng_buffertype_string(enum lttng_buffer_type value);
 const char *mi_lttng_calibratetype_string(enum lttng_calibrate_type val);
 
 /*
- * Create an instance of a machine interface writer.
+ * mi_lttng_writer_create - Create an instance of a machine interface writer.
  *
- * fd_output File to which the XML content must be written. The file will be
- * closed once the mi_writer has been destroyed.
+ * @fd_output:      File to which the XML content must be written. The file will
+ *                  be closed once the mi_writer has been destroyed.
+ * @mi_output_type: The type of mi output
  *
  * Returns an instance of a machine interface writer on success, NULL on
  * error.
@@ -208,9 +209,9 @@ const char *mi_lttng_calibratetype_string(enum lttng_calibrate_type val);
 struct mi_writer *mi_lttng_writer_create(int fd_output, int mi_output_type);
 
 /*
- * Destroy an instance of a machine interface writer.
+ * mi_lttng_writer_destroy - Destroy an instance of a machine interface writer.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the XML document could be closed cleanly. Negative values
  * indicate an error.
@@ -218,10 +219,10 @@ struct mi_writer *mi_lttng_writer_create(int fd_output, int mi_output_type);
 int mi_lttng_writer_destroy(struct mi_writer *writer);
 
 /*
- * Open a command tag and add it's name node.
+ * mi_lttng_writer_command_open - Open a command tag and add it's name node.
  *
- * writer An instance of a machine interface writer.
- * command The command name.
+ * @writer:  An instance of a machine interface writer.
+ * @command: The command name.
  *
  * Returns zero if the XML document could be closed cleanly.
  * Negative values indicate an error.
@@ -229,9 +230,9 @@ int mi_lttng_writer_destroy(struct mi_writer *writer);
 int mi_lttng_writer_command_open(struct mi_writer *writer, const char *command);
 
 /*
- * Close a command tag.
+ * mi_lttng_writer_command_close - Close a command tag.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the XML document could be closed cleanly.
  * Negative values indicate an error.
@@ -239,10 +240,10 @@ int mi_lttng_writer_command_open(struct mi_writer *writer, const char *command);
 int mi_lttng_writer_command_close(struct mi_writer *writer);
 
 /*
- * Open an element tag.
+ * mi_lttng_writer_open_element - Open an element tag.
  *
- * writer An instance of a machine interface writer.
- * element_name Element tag name.
+ * @writer:       An instance of a machine interface writer.
+ * @element_name: Element tag name.
  *
  * Returns zero if the XML document could be closed cleanly.
  * Negative values indicate an error.
@@ -251,9 +252,9 @@ int mi_lttng_writer_open_element(struct mi_writer *writer,
 		const char *element_name);
 
 /*
- * Close the current element tag.
+ * mi_lttng_writer_close_element - Close the current element tag.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the XML document could be closed cleanly.
  * Negative values indicate an error.
@@ -261,10 +262,10 @@ int mi_lttng_writer_open_element(struct mi_writer *writer,
 int mi_lttng_writer_close_element(struct mi_writer *writer);
 
 /*
- * Close multiple element.
+ * mi_lttng_close_multi_element - Close multiple element.
  *
- * writer An instance of a machine interface writer.
- * nb_element Number of elements.
+ * @writer:     An instance of a machine interface writer.
+ * @nb_element: Number of elements.
  *
  * Returns zero if the XML document could be closed cleanly.
  * Negative values indicate an error.
@@ -273,11 +274,12 @@ int mi_lttng_close_multi_element(struct mi_writer *writer,
 		unsigned int nb_element);
 
 /*
- * Write an element of type unsigned int.
+ * mi_lttng_writer_write_element_unsigned_int - Write an element of type
+ *                                              unsigned int.
  *
- * writer An instance of a machine interface writer.
- * element_name Element name.
- * value Unsigned int value of the element
+ * @writer:       An instance of a machine interface writer.
+ * @element_name: Element name.
+ * @value:        Unsigned int value of the element
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -286,11 +288,12 @@ int mi_lttng_writer_write_element_unsigned_int(struct mi_writer *writer,
 		const char *element_name, uint64_t value);
 
 /*
- * Write an element of type signed int.
+ * mi_lttng_writer_write_element_signed_int - Write an element of type
+ *                                            signed int.
  *
- * writer An instance of a machine interface writer.
- * element_name Element name.
- * value Signed int value of the element.
+ * @writer:       An instance of a machine interface writer.
+ * @element_name: Element name.
+ * @value:        Signed int value of the element.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -299,11 +302,11 @@ int mi_lttng_writer_write_element_signed_int(struct mi_writer *writer,
 		const char *element_name, int64_t value);
 
 /*
- * Write an element of type boolean.
+ * mi_lttng_writer_write_element_bool - Write an element of type boolean.
  *
- * writer An instance of a machine interface writer.
- * element_name Element name.
- * value Boolean value of the element.
+ * @writer:       An instance of a machine interface writer.
+ * @element_name: Element name.
+ * @value:        Boolean value of the element.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -312,11 +315,11 @@ int mi_lttng_writer_write_element_bool(struct mi_writer *writer,
 		const char *element_name, int value);
 
 /*
- * Write an element of type string.
+ * mi_lttng_writer_write_element_string - Write an element of type string.
  *
- * writer An instance of a machine interface writer.
- * element_name Element name.
- * value String value of the element.
+ * @writer:       An instance of a machine interface writer.
+ * @element_name: Element name.
+ * @value:        String value of the element.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -325,12 +328,12 @@ int mi_lttng_writer_write_element_string(struct mi_writer *writer,
 		const char *element_name, const char *value);
 
 /*
- * Machine interface of struct version.
+ * mi_lttng_version - MI represention of struct version.
  *
- * writer An instance of a machine interface writer.
- * version Version struct.
- * lttng_description String value of the version description.
- * lttng_license String value of the version license.
+ * @writer:            An instance of a machine interface writer.
+ * @version:           Version struct.
+ * @lttng_description: String value of the version description.
+ * @lttng_license:     String value of the version license.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -339,9 +342,9 @@ int mi_lttng_version(struct mi_writer *writer, struct mi_lttng_version *version,
 		const char *lttng_description, const char *lttng_license);
 
 /*
- * Machine interface: open a sessions element.
+ * mi_lttng_sessions_open - Open a sessions element.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -349,15 +352,15 @@ int mi_lttng_version(struct mi_writer *writer, struct mi_lttng_version *version,
 int mi_lttng_sessions_open(struct mi_writer *writer);
 
 /*
- * Machine interface of struct session.
+ * mi_lttng_session - MI represention of struct session.
  *
- * writer An instance of a machine interface writer.
- * session An instance of a session.
- * is_open Defines whether or not the session element shall be closed.
- *         This should be used carefully and the client
- *         must close the session element.
- *         Use case: nested additional information on a session
- *                  ex: domain,channel event.
+ * @writer:  An instance of a machine interface writer.
+ * @session: An instance of a session.
+ * @is_open: Defines whether or not the session element shall be closed.
+ *           This should be used carefully and the client
+ *           must close the session element.
+ *           Use case: nested additional information on a session
+ *            ex: domain,channel event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -366,9 +369,9 @@ int mi_lttng_session(struct mi_writer *writer,
 		struct lttng_session *session, int is_open);
 
 /*
- * Machine interface: open a domains element.
+ * mi_lttng_domains_open - Open a domains element.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -376,16 +379,16 @@ int mi_lttng_session(struct mi_writer *writer,
 int mi_lttng_domains_open(struct mi_writer *writer);
 
 /*
- * Machine interface of struct domain.
+ * mi_lttng_domain - MI represention of struct domain.
  *
- * writer An instance of a machine interface writer.
- * domain An instance of a domain.
+ * @writer: An instance of a machine interface writer.
+ * @domain: An instance of a domain.
  *
- * is_open Defines whether or not the session element shall be closed.
- *         This should be used carefully and the client
- *         must close the domain element.
- *         Use case: nested addition information on a domain
- *                  ex: channel event.
+ * @is_open: Defines whether or not the session element shall be closed.
+ *           This should be used carefully and the client
+ *           must close the domain element.
+ *           Use case: nested addition information on a domain
+ *            ex: channel event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -394,9 +397,9 @@ int mi_lttng_domain(struct mi_writer *writer,
 		struct lttng_domain *domain, int is_open);
 
 /*
- * Machine interface: open a channels element.
+ * mi_lttng_channels_open - Open a channels element.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -404,16 +407,16 @@ int mi_lttng_domain(struct mi_writer *writer,
 int mi_lttng_channels_open(struct mi_writer *writer);
 
 /*
- * Machine interface of struct channel.
+ * mi_lttng_channel - Mi represention of struct channel.
  *
- * writer An instance of a machine interface writer.
- * channel An instance of a channel.
+ * @writer:  An instance of a machine interface writer.
+ * @channel: An instance of a channel.
  *
- * is_open Defines whether or not the session element shall be closed.
- *         This should be used carefully and the client
- *         must close the channel element.
- *         Use case: nested addition information on a channel.
- *                  ex: channel event.
+ * @is_open: Defines whether or not the session element shall be closed.
+ *           This should be used carefully and the client
+ *           must close the channel element.
+ *           Use case: nested addition information on a channel.
+ *            ex: channel event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -422,10 +425,10 @@ int mi_lttng_channel(struct mi_writer *writer,
 		struct lttng_channel *channel, int is_open);
 
 /*
- * Machine interface of struct channel_attr.
+ * mi_lttng_channel_attr - MI representation of struct channel_attr.
  *
- * writer An instance of a machine interface writer.
- * attr An instance of a channel_attr struct.
+ * @writer: An instance of a machine interface writer.
+ * @attr:   An instance of a channel_attr struct.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -434,30 +437,32 @@ int mi_lttng_channel_attr(struct mi_writer *writer,
 		struct lttng_channel_attr *attr);
 
 /*
-* Machine interface for event common attributes.
-*
-* writer An instance of a mi writer.
-* event single trace event.
-*
-* The common attribute are:
-* - mi event element
-* - event name
-* - event type
-* - enabled tag
-* - event filter
-*
-* Returns zero if the element's value could be written.
-* Negative values indicate an error.
-*/
+ * mi_lttng_event_common_attributes - MI representation for event common
+ *                                    attributes.
+ *
+ * @writer: An instance of a mi writer.
+ * @event:  Single trace event.
+ *
+ * The common attribute are:
+ * - mi event element
+ * - event name
+ * - event type
+ * - enabled tag
+ * - event filter
+ *
+ * Returns zero if the element's value could be written.
+ * Negative values indicate an error.
+ */
 int mi_lttng_event_common_attributes(struct mi_writer *writer,
 		struct lttng_event *event);
 
 /*
- * Machine interface for kernel tracepoint event with a loglevel.
+ * mi_lttng_event_tracepoint_loglevel - MI representation for kernel tracepoint
+ *                                      event with a loglevel.
  *
- * writer An instance of a mi writer.
- * event single trace event.
- * domain Event's domain
+ * @writer: An instance of a mi writer.
+ * @event:  Single trace event.
+ * @domain: Event's domain
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -466,10 +471,11 @@ int mi_lttng_event_tracepoint_loglevel(struct mi_writer *writer,
 		struct lttng_event *event, enum lttng_domain_type domain);
 
 /*
- * Machine interface for kernel tracepoint event with no loglevel.
+ * mi_lttng_event_tracepoint_no_loglevel - MI representation for kernel
+ *                                         tracepoint event with no loglevel.
  *
- * writer An instance of a mi writer.
- * event single trace event.
+ * @writer: An instance of a mi writer.
+ * @event:  Single trace event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -478,10 +484,11 @@ int mi_lttng_event_tracepoint_no_loglevel(struct mi_writer *writer,
 		struct lttng_event *event);
 
 /*
- * Machine interface for kernel function and probe event.
+ * mi_lttng_event_function_probe - MI representation for kernel function and
+ *                                 probe event.
  *
- * writer An instance of a mi writer.
- * event single trace event.
+ * @writer: An instance of a mi writer.
+ * @event:  Single trace event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -490,10 +497,11 @@ int mi_lttng_event_function_probe(struct mi_writer *writer,
 		struct lttng_event *event);
 
 /*
- * Machine interface for kernel function entry event.
+ * mi_lttng_event_function_entry - MI representation for kernel function entry
+ *                                 event.
  *
- * writer An instance of a mi writer.
- * event single trace event.
+ * @writer: An instance of a mi writer.
+ * @event: Single trace event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -502,9 +510,9 @@ int mi_lttng_event_function_entry(struct mi_writer *writer,
 		struct lttng_event *event);
 
 /*
- * Machine interface: open an events element.
+ * mi_lttng_events_open - Open an events element.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -512,21 +520,22 @@ int mi_lttng_event_function_entry(struct mi_writer *writer,
 int mi_lttng_events_open(struct mi_writer *writer);
 
 /*
- * Machine interface for printing an event.
+ * mi_lttng_event - MI representation of an event.
+ *
+ * @writer:  An instance of a mi writer.
+ * @event:   Single trace event.
+ * @is_open: Defines whether or not the session element shall be closed.
+ *           This should be used carefully and the client
+ *           must close the event element.
+ *           Use case: nested additional information
+ * @domain:  Event's domain
+ *
  * The trace event type currently supported are:
  *  TRACEPOINT,
  *  PROBE,
  *  FUNCTION,
  *  FUNCTION_ENTRY,
  *  SYSCALL
- *
- * writer An instance of a mi writer.
- * event single trace event.
- * is_open Defines whether or not the session element shall be closed.
- *         This should be used carefully and the client
- *         must close the event element.
- *         Use case: nested additional information
- * domain Event's domain
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -535,10 +544,10 @@ int mi_lttng_event(struct mi_writer *writer, struct lttng_event *event,
 		int is_open, enum lttng_domain_type domain);
 
 /*
- * Machine interface for struct lttng_event_field.
+ * mi_lttng_event_field - MI representation for struct lttng_event_field.
  *
- * writer An instance of a mi writer.
- * field An event_field instance.
+ * @writer: An instance of a mi writer.
+ * @field:  An event_field instance.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -547,9 +556,9 @@ int mi_lttng_event_field(struct mi_writer *writer,
 		struct lttng_event_field *field);
 
 /*
- * Machine interface: open a event_fields element.
+ * mi_lttng_event_fields_open - Open an event_fields element.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the element have be written.
  * Negative values indicate an error.
@@ -557,11 +566,12 @@ int mi_lttng_event_field(struct mi_writer *writer,
 int mi_lttng_event_fields_open(struct mi_writer *writer);
 
 /*
- * Machine interface: open a pid_tracker element.
- * Note: A PIDs element is also open per definition of the tracker
+ * mi_lttng_pid_tracker_open - Open a pid_tracker element.
  *
- * writer An instance of a machine interface writer.
- * enabled Tell if the pid tracker is enabled (enabled > 0)
+ * @writer:  An instance of a machine interface writer.
+ * @enabled: Tell if the pid tracker is enabled (enabled > 0)
+ *
+ * Note: A PIDs element is also open per definition of the tracker
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -569,9 +579,9 @@ int mi_lttng_event_fields_open(struct mi_writer *writer);
 int mi_lttng_pid_tracker_open(struct mi_writer *writer, uint32_t enabled);
 
 /*
- * Machine interface: open a PIDs element.
+ * mi_lttng_pids_open - Open a PIDs element.
  *
- * writer An instance of a machine interface writer.
+ * @writer: An instance of a machine interface writer.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -579,16 +589,16 @@ int mi_lttng_pid_tracker_open(struct mi_writer *writer, uint32_t enabled);
 int mi_lttng_pids_open(struct mi_writer *writer);
 
 /*
- * Machine interface of a PID.
+ * mi_lttng_pid - MI representation of a PID.
  *
- * writer An instance of a machine interface writer.
- * pid A PID.
+ * @writer:  An instance of a machine interface writer.
+ * @pid:     A PID.
  *
- * is_open Defines whether or not the session element shall be closed.
- *         This should be used carefully and the client
- *         must close the pid element.
- *         Use case: nested addition information on a domain
- *                  ex: channel event.
+ * @is_open: Defines whether or not the session element shall be closed.
+ *           This should be used carefully and the client
+ *           must close the pid element.
+ *           Use case: nested addition information on a domain
+ *            ex: channel event.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -597,11 +607,10 @@ int mi_lttng_pid(struct mi_writer *writer, pid_t pid , const char *cmdline,
 		int is_open);
 
 /*
- * Machine interface for struct lttng_calibrate.
+ * mi_lttng_calibrate - MI representation for struct lttng_calibrate.
  *
- * writer An instance of a machine interface writer.
- *
- * calibrate A lttng_calibrate instance.
+ * @writer:    An instance of a machine interface writer.
+ * @calibrate: A lttng_calibrate instance.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -610,15 +619,15 @@ int mi_lttng_calibrate(struct mi_writer *writer,
 		struct lttng_calibrate *calibrate);
 
 /*
- * Machine interface of a context.
+ * mi_lttng_context - MI representation of a context.
  *
- * writer An instance of a machine interface writer
+ * @writer:  An instance of a machine interface writer
+ * @context: An instance of a lttng_event_context
  *
- * context An instance of a lttng_event_context
+ * @is_open: Define if we close the context element
+ *           This should be used carefully and the client
+ *           need to close the context element.
  *
- * is_open Define if we close the context element
- *         This should be used carefully and the client
- *         need to close the context element.
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
  */
@@ -626,11 +635,10 @@ int mi_lttng_context(struct mi_writer *writer,
 		struct lttng_event_context *context, int is_open);
 
 /*
- * Machine interface of a perf_counter_context.
+ * mi_lttng_perf_counter_context - MI representation of a perf_counter_context.
  *
- * writer An instance of a machine interface writer
- *
- * contest An instance of a lttng_event_perf_counter_ctx
+ * @writer:  An instance of a machine interface writer
+ * @contest: An instance of a lttng_event_perf_counter_ctx
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -639,14 +647,15 @@ int mi_lttng_perf_counter_context(struct mi_writer *writer,
 		struct lttng_event_perf_counter_ctx  *perf_context);
 
 /*
- * Machine interface of the snapshot list_output.
+ * mi_lttng_snapshot_output_session_name - MI representation of the snapshot
+ *                                         list_output.
+ *
+ * @writer:       An instance of a machine interface writer.
+ * @session_name: Snapshot output for session "session_name".
+ *
  * It specifies the session for which we are listing snapshots,
  * and it opens a snapshots element to list a sequence
  * of snapshots.
- *
- * writer An instance of a machine interface writer.
- *
- * session_name: Snapshot output for session "session_name".
  *
  * Note: The client has to close the session and the snapshots elements after
  * having listed every lttng_snapshot_output.
@@ -658,17 +667,10 @@ int mi_lttng_snapshot_output_session_name(struct mi_writer *writer,
 		const char *session_name);
 
 /*
- * Machine interface of the snapshot output.
- * The machine interface serializes the following attributes:
- * - id: ID of the snapshot output.
- * - name: Name of the output.
- * - data_url : Destination of the output.
- * - ctrl_url: Destination of the output.
- * - max_size: total size of all stream combined.
+ * mi_lttng_snapshot_list_output - MI representation of the snapshot output.
  *
- * writer An instance of a machine interface writer.
- *
- * output: A list of snapshot_output.
+ * @writer: An instance of a machine interface writer.
+ * @output: A list of lttng_snapshot_output.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -677,22 +679,13 @@ int mi_lttng_snapshot_list_output(struct mi_writer *writer,
 		struct lttng_snapshot_output *output);
 
 /*
- * Machine interface of the output of the command snapshot del output
- * when deleting a snapshot either by id or by name.
- * If the snapshot was found and successfully deleted using its id,
- * it return the id of the snapshot and the current session name on which it
- * was attached.
+ * mi_lttng_snapshot_del_output - MI representation of the output of command
+ *                                snapshot del output.
  *
- * Otherwise, it do the same process with the name of the snapshot, if the
- * snapshot output id is undefined.
- *
- * writer An instance of a machine interface writer.
- *
- * id: ID of the snapshot output.
- *
- * name: Name of the snapshot.
- *
- * current_session_name: Session to which the snapshot belongs.
+ * @writer:               An instance of a machine interface writer.
+ * @id:                   ID of the snapshot output.
+ * @name:                 Name of the snapshot.
+ * @current_session_name: Session to which the snapshot belongs.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
@@ -701,48 +694,29 @@ int mi_lttng_snapshot_del_output(struct mi_writer *writer, int id,
 		const char *name, const char *current_session_name);
 
 /*
- * Machine interface of the output of the command snapshot add output
- * when adding a snapshot from a user URL.
+ * mi_lttng_snapshot_add_output - MI representation of command snapshot add output
  *
- * If the snapshot was successfully added, the machine interface lists
- * these information:
- * - id: ID of the newly add snapshot output.
- * - current_session_name: Name of the session to which the output was added.
- * - ctrl_url: Destination of the output.
- * - max_size: total size of all stream combined.
- *
- * writer An instance of a machine interface writer.
- *
- * current_session_name: Session to which the snapshot belongs.
- *
- * n_ptr:
- *
- * output: iterator over a lttng_snapshot_output_list which contain
- * the snapshot output informations.
+ * @writer:               An instance of a machine interface writer.
+ * @current_session_name: Session to which the snapshot belongs.
+ * @n_ptr:                Name of the current output
+ * @output:               Current output
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
+ * TODO MI: Remove the n_ptr argument which is in the end present inside the
+ *          lttng_snapshot_output struct
  */
 int mi_lttng_snapshot_add_output(struct mi_writer *writer,
 		const char *current_session_name, const char *n_ptr,
 		struct lttng_snapshot_output *output);
 
 /*
- * Machine interface of the output of the command snapshot
- * record  from a URL (if given).
+ * mi_lttng_snapshot_record - MI representation of the output of the
+ *                            command snapshot record from a URL (if given).
  *
- * If the snapshot is successfully recorded from a url, the machine interface
- * output the following information:
- * - url: Destination of the output stored in the snapshot.
- *
- * Otherwise, the machine interface output the data and ctrl url received
- * from the command-line.
- *
- * writer An instance of a machine interface writer.
- *
- * current_session_name: Snapshot record for session "current_session_name".
- *
- * ctrl_url, data_url: Destination of the output receive from the command-line.
+ * @writer:               An instance of a machine interface writer.
+ * @current_session_name: Name of the session.
+ * @ctrl_url, data_url:   Destination of the output.
  *
  * Returns zero if the element's value could be written.
  * Negative values indicate an error.
