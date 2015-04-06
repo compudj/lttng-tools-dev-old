@@ -1427,6 +1427,9 @@ int cmd_enable_event(struct ltt_session *session, struct lttng_domain *domain,
 			event->type = LTTNG_EVENT_TRACEPOINT;	/* Hack */
 			ret = event_kernel_enable_event(kchan, event,
 				filter_expression, filter);
+			/* We have passed ownership */
+			filter_expression = NULL;
+			filter = NULL;
 			if (ret != LTTNG_OK) {
 				if (channel_created) {
 					/* Let's not leak a useless channel. */
@@ -1452,6 +1455,9 @@ int cmd_enable_event(struct ltt_session *session, struct lttng_domain *domain,
 		case LTTNG_EVENT_TRACEPOINT:
 			ret = event_kernel_enable_event(kchan, event,
 				filter_expression, filter);
+			/* We have passed ownership */
+			filter_expression = NULL;
+			filter = NULL;
 			if (ret != LTTNG_OK) {
 				if (channel_created) {
 					/* Let's not leak a useless channel. */
@@ -1463,6 +1469,9 @@ int cmd_enable_event(struct ltt_session *session, struct lttng_domain *domain,
 		case LTTNG_EVENT_SYSCALL:
 			ret = event_kernel_enable_event(kchan, event,
 				filter_expression, filter);
+			/* We have passed ownership */
+			filter_expression = NULL;
+			filter = NULL;
 			if (ret != LTTNG_OK) {
 				goto error;
 			}
