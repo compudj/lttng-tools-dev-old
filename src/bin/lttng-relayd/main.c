@@ -1244,11 +1244,13 @@ static
 int relay_add_stream(struct lttcomm_relayd_hdr *recv_hdr,
 		struct relay_connection *conn)
 {
-	int ret, send_ret;
+	int ret;
+	ssize_t send_ret;
 	struct relay_session *session = conn->session;
 	struct relay_stream *stream = NULL;
 	struct lttcomm_relayd_status_stream reply;
 	struct ctf_trace *trace = NULL;
+	uint64_t stream_handle;
 
 	if (!session || conn->version_check_done == 0) {
 		ERR("Trying to add a stream before version check");
@@ -1276,7 +1278,8 @@ int relay_add_stream(struct lttcomm_relayd_hdr *recv_hdr,
 		goto err_free_stream;
 	}
 
-	stream->stream_handle = ++last_relay_stream_id;
+	stream_handle = ++last_relay_stream_id;
+	stream->stream_handle = stream_handle;
 	stream->prev_seq = -1ULL;
 	stream->session_id = session->id;
 	stream->index_fd = -1;
@@ -1288,7 +1291,7 @@ int relay_add_stream(struct lttcomm_relayd_hdr *recv_hdr,
 	ret = utils_mkdir_recursive(stream->path_name, S_IRWXU | S_IRWXG);
 	if (ret < 0) {
 		ERR("relay creating output directory");
-		goto err_free_stream;
+		goto send_reply;
 	}
 
 	/*
@@ -1299,7 +1302,7 @@ int relay_add_stream(struct lttcomm_relayd_hdr *recv_hdr,
 			stream->tracefile_size, 0, relayd_uid, relayd_gid, NULL);
 	if (ret < 0) {
 		ERR("Create output file");
-		goto err_free_stream;
+		goto send_reply;
 	}
 	stream->fd = ret;
 	if (stream->tracefile_size) {
@@ -1308,14 +1311,15 @@ int relay_add_stream(struct lttcomm_relayd_hdr *recv_hdr,
 		DBG("Tracefile %s/%s created", stream->path_name, stream->channel_name);
 	}
 
-	/* Protect access to "trace" */
+	/* Ensure existance of trace and stream */
 	rcu_read_lock();
 	trace = ctf_trace_find_by_path(session->ctf_traces_ht, stream->path_name);
 	if (!trace) {
 		trace = ctf_trace_create(stream->path_name);
 		if (!trace) {
 			ret = -1;
-			goto end;
+			rcu_read_unlock();
+			goto send_reply;
 		}
 		ctf_trace_add(session->ctf_traces_ht, trace);
 	}
@@ -1349,13 +1353,31 @@ int relay_add_stream(struct lttcomm_relayd_hdr *recv_hdr,
 	DBG("Relay new stream added %s with ID %" PRIu64, stream->channel_name,
 			stream->stream_handle);
 
-end:
+	/* It is invalid to touch trace without read-side lock */
+	trace = NULL;
+	/*
+	 * It is invalid to use stream without read-side lock after it
+	 * has been added to the hash table.
+	 */
+	stream = NULL;
+	rcu_read_unlock();
+
+send_reply:
 	memset(&reply, 0, sizeof(reply));
-	reply.handle = htobe64(stream->stream_handle);
-	/* send the session id to the client or a negative return code on error */
-	if (ret < 0) {
+	reply.handle = htobe64(stream_handle);
+	/*
+	 * If stream is not NULL, we are in an error path. Send the
+	 * session id to the client or a negative return code on error.
+	 */
+	if (stream) {
 		reply.ret_code = htobe32(LTTNG_ERR_UNK);
-		/* stream was not properly added to the ht, so free it */
+		/*
+		 * stream was not properly added to the ht, so free it.
+		 * Since it has not been added to the ht, we don't need
+		 * the RCU read-side lock to ensure its existance,
+		 * because we have local ownership of stream in this
+		 * scenario.
+		 */
 		stream_destroy(stream);
 	} else {
 		reply.ret_code = htobe32(LTTNG_OK);
@@ -1365,15 +1387,8 @@ end:
 			sizeof(struct lttcomm_relayd_status_stream), 0);
 	if (send_ret < 0) {
 		ERR("Relay sending stream id");
-		ret = send_ret;
+		ret = (int) send_ret;
 	}
-	/*
-	 * rcu_read_lock() was held to protect either "trace" OR the "stream" at
-	 * this point.
-	 */
-	rcu_read_unlock();
-	trace = NULL;
-	stream = NULL;
 
 end_no_session:
 	return ret;
