@@ -177,7 +177,6 @@ end:
 			stream->stream_fd = NULL;
 		}
 		stream_put(stream);
-		ctf_trace_put(trace);
 		stream = NULL;
 	}
 	return stream;
