@@ -30,6 +30,7 @@ static void viewer_stream_destroy(struct relay_viewer_stream *vstream)
 	free(vstream->path_name);
 	free(vstream->channel_name);
 	free(vstream);
+	//ERR("XXX free vstream");
 }
 
 static void viewer_stream_destroy_rcu(struct rcu_head *head)
@@ -155,7 +156,7 @@ static void viewer_stream_release(struct urcu_ref *ref)
 			struct relay_viewer_stream, ref);
 
 	if (vstream->stream->is_metadata) {
-		vstream->stream->trace->viewer_metadata_stream = NULL;
+		rcu_assign_pointer(vstream->stream->trace->viewer_metadata_stream, NULL);
 	}
 
 	viewer_stream_unpublish(vstream);
@@ -236,7 +237,7 @@ bool viewer_stream_is_tracefile_id_readable(struct relay_viewer_stream *vstream,
 	struct relay_stream *stream = vstream->stream;
 
 	if (stream->oldest_tracefile_id <= stream->current_tracefile_id) {
-		if (id >= stream->oldest_tracefile_id && id < stream->current_tracefile_id) {
+		if (id >= stream->oldest_tracefile_id && id <= stream->current_tracefile_id) {
 			/* id is a readable file. */
 			return true;
 		} else {
@@ -244,7 +245,7 @@ bool viewer_stream_is_tracefile_id_readable(struct relay_viewer_stream *vstream,
 			return false;
 		}
 	} else {
-		if (id >= stream->oldest_tracefile_id || id < stream->current_tracefile_id) {
+		if (id >= stream->oldest_tracefile_id || id <= stream->current_tracefile_id) {
 			/* id is a readable file. */
 			return true;
 		} else {
@@ -280,6 +281,7 @@ int viewer_stream_rotate(struct relay_viewer_stream *vstream)
 	}
 
 	new_id = (vstream->current_tracefile_id + 1) % stream->tracefile_count;
+	//ERR("XXX stream handle %" PRIu64 " new_id %" PRIu64 " tfcount %" PRIu64 " oldestid %" PRIu64 " isnewidreadable %" PRIu64, stream->stream_handle, new_id, stream->tracefile_count, stream->oldest_tracefile_id, viewer_stream_is_tracefile_id_readable(vstream, new_id));
 	if (!viewer_stream_is_tracefile_id_readable(vstream, new_id)) {
 		new_id = stream->oldest_tracefile_id;
 	}

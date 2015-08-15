@@ -41,10 +41,7 @@ struct ctf_trace {
 	 */
 	pthread_mutex_t lock;
 	uint64_t id;
-	uint64_t metadata_received;
-	uint64_t metadata_sent;
-	struct relay_stream *metadata_stream;
-	struct relay_viewer_stream *viewer_metadata_stream;
+	struct relay_viewer_stream *viewer_metadata_stream;	/* RCU protected */
 
 	/*
 	 * Relay streams associated with this ctf trace.
@@ -68,5 +65,7 @@ bool ctf_trace_get(struct ctf_trace *trace);
 void ctf_trace_put(struct ctf_trace *trace);
 
 int ctf_trace_close(struct ctf_trace *trace);
+
+struct relay_viewer_stream *ctf_trace_get_viewer_metadata_stream(struct ctf_trace *trace);
 
 #endif /* _CTF_TRACE_H */

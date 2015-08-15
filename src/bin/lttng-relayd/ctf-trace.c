@@ -194,3 +194,20 @@ int ctf_trace_close(struct ctf_trace *trace)
 	 */
 	return 0;
 }
+
+struct relay_viewer_stream *ctf_trace_get_viewer_metadata_stream(struct ctf_trace *trace)
+{
+	struct relay_viewer_stream *vstream;
+
+	rcu_read_lock();
+	vstream = rcu_dereference(trace->viewer_metadata_stream);
+	if (!vstream) {
+		goto end;
+	}
+	if (!viewer_stream_get(vstream)) {
+		vstream = NULL;
+	}
+end:
+	rcu_read_unlock();
+	return vstream;
+}

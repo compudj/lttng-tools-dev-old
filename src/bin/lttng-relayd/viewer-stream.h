@@ -61,6 +61,8 @@ struct relay_viewer_stream {
 
 	/* Indicates if this stream has been sent to a viewer client. */
 	bool sent_flag;
+	/* For metadata stream, how much metadata has been sent. */
+	uint64_t metadata_sent;
 
 	struct lttng_ht_node_u64 stream_n;
 	struct rcu_head rcu_node;

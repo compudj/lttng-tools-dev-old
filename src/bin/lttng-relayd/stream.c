@@ -144,8 +144,6 @@ struct relay_stream *stream_create(struct ctf_trace *trace,
 
 	if (!strncmp(stream->channel_name, DEFAULT_METADATA_NAME, NAME_MAX)) {
 		stream->is_metadata = 1;
-		/* Assign quick reference to the metadata stream in the trace. */
-		trace->metadata_stream = stream;
 	}
 
 	/*

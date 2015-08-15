@@ -98,6 +98,7 @@ struct relay_stream {
 
 	/* Is this stream a metadata stream ? */
 	int32_t is_metadata;
+	uint64_t metadata_received;
 
 	/*
 	 * Member of the stream list in struct ctf_trace.

@@ -1247,6 +1247,25 @@ static int relay_close_stream(struct lttcomm_relayd_hdr *recv_hdr,
 	pthread_mutex_lock(&stream->lock);
 	stream->closed = true;
 	stream->last_net_seq_num = be64toh(stream_info.last_net_seq_num);
+	if (stream->is_metadata) {
+		struct relay_viewer_stream *vstream;
+		bool close_metadata = false;
+
+		vstream = viewer_stream_get_by_id(stream->stream_handle);
+		if (vstream) {
+			pthread_mutex_lock(&vstream->lock);
+			if (vstream->metadata_sent == stream->metadata_received) {
+				close_metadata = true;
+				ERR("main putting ownership of vstream %" PRIu64,
+					vstream->stream->stream_handle);
+			}
+			pthread_mutex_unlock(&vstream->lock);
+			viewer_stream_put(vstream);
+		}
+		if (close_metadata) {
+			viewer_stream_put(vstream);
+		}
+	}
 	pthread_mutex_unlock(&stream->lock);
 	stream_put(stream);
 
@@ -1421,9 +1440,9 @@ static int relay_recv_metadata(struct lttcomm_relayd_hdr *recv_hdr,
 		goto end_put;
 	}
 
-	metadata_stream->trace->metadata_received +=
+	metadata_stream->metadata_received +=
 		payload_size + be32toh(metadata_struct->padding_size);
-
+	//ERR("XXX5 meta recv updated %" PRIu64, metadata_stream->metadata_received);
 	DBG2("Relay metadata written");
 
 end_put:
@@ -1832,6 +1851,7 @@ static int relay_recv_index(struct lttcomm_relayd_hdr *recv_hdr,
 
 	stream = stream_get_by_id(be64toh(index_info.relay_stream_id));
 	if (!stream) {
+		ERR("stream_get_by_id not found");
 		ret = -1;
 		goto end;
 	}
@@ -1839,14 +1859,17 @@ static int relay_recv_index(struct lttcomm_relayd_hdr *recv_hdr,
 
 	/* Live beacon handling */
 	if (index_info.packet_size == 0) {
-		DBG("Received live beacon for stream %" PRIu64, stream->stream_handle);
+		DBG("Received live beacon for stream %" PRIu64,
+			stream->stream_handle);
 
 		/*
-		 * Only flag a stream inactive when it has already received data
-		 * and no indexes are in flight.
+		 * Only flag a stream inactive when it has already
+		 * received data and no indexes are in flight.
 		 */
-		if (stream->total_index_received > 0 && stream->indexes_in_flight == 0) {
-			stream->beacon_ts_end = be64toh(index_info.timestamp_end);
+		if (stream->total_index_received > 0
+				&& stream->indexes_in_flight == 0) {
+			stream->beacon_ts_end =
+				be64toh(index_info.timestamp_end);
 		}
 		ret = 0;
 		goto end_stream_put;
@@ -1860,9 +1883,11 @@ static int relay_recv_index(struct lttcomm_relayd_hdr *recv_hdr,
 	index = relay_index_get_by_id_or_create(stream, net_seq_num);
 	if (!index) {
 		ret = -1;
+		ERR("relay_index_get_by_id_or_create index NULL");
 		goto end_stream_put;
 	}
 	if (set_index_control_data(index, &index_info)) {
+		ERR("set_index_control_data error");
 		relay_index_put(index);
 		ret = -1;
 		goto end_stream_put;
@@ -1874,6 +1899,7 @@ static int relay_recv_index(struct lttcomm_relayd_hdr *recv_hdr,
 		/* no flush. */
 		ret = 0;
 	} else {
+		ERR("relay_index_try_flush error %d", ret);
 		relay_index_put(index);
 		ret = -1;
 	}
@@ -2016,10 +2042,13 @@ static int handle_index_data(struct relay_stream *stream, uint64_t net_seq_num,
 	/* Get data offset because we are about to update the index. */
 	data_offset = htobe64(stream->tracefile_size_current);
 
+	//ERR("XXX stream handle %" PRIu64 " data offset %" PRIu64,
+	//	stream->stream_handle, stream->tracefile_size_current);
+
 	/*
-	 * Lookup for an existing index for that stream id/sequence number. If on
-	 * exists, the control thread already received the data for it thus we need
-	 * to write it on disk.
+	 * Lookup for an existing index for that stream id/sequence
+	 * number. If on exists, the control thread already received the
+	 * data for it thus we need to write it on disk.
 	 */
 	index = relay_index_get_by_id_or_create(stream, net_seq_num);
 	if (!index) {
@@ -2057,6 +2086,7 @@ static int handle_index_data(struct relay_stream *stream, uint64_t net_seq_num,
 			goto end;
 		}
 	}
+
 	if (relay_index_set_fd(index, stream->index_fd, data_offset)) {
 		ret = -1;
 		/* Put self-ref for this index due to error. */
@@ -2203,8 +2233,8 @@ static int relay_process_data(struct relay_connection *conn)
 		goto end_stream_unlock;
 	}
 
-	DBG2("Relay wrote %d bytes to tracefile for stream id %" PRIu64,
-			ret, stream->stream_handle);
+	DBG2("Relay wrote %zd bytes to tracefile for stream id %" PRIu64,
+			size_ret, stream->stream_handle);
 
 	ret = write_padding_to_file(stream->stream_fd->fd, be32toh(data_hdr.padding_size));
 	if (ret < 0) {
