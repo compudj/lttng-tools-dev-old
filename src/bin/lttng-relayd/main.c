@@ -336,9 +336,9 @@ static int config_entry_handler(const struct config_entry *entry, void *unused)
 		}
 
 		/*
-		 * If the option takes no argument on the command line, we have to
-		 * check if the value is "true". We support non-zero numeric values,
-		 * true, on and yes.
+		 * If the option takes no argument on the command line,
+		 * we have to check if the value is "true". We support
+		 * non-zero numeric values, true, on and yes.
 		 */
 		if (!long_options[i].has_arg) {
 			ret = config_parse_value(entry->value);
@@ -797,7 +797,8 @@ static void *relay_thread_listener(void *data)
 	}
 
 	/*
-	 * Pass 3 as size here for the thread quit pipe, control and data socket.
+	 * Pass 3 as size here for the thread quit pipe, control and
+	 * data socket.
 	 */
 	ret = create_thread_poll_set(&events, 3);
 	if (ret < 0) {
@@ -852,7 +853,10 @@ restart:
 			pollfd = LTTNG_POLL_GETFD(&events, i);
 
 			if (!revents) {
-				/* No activity for this FD (poll implementation). */
+				/*
+				 * No activity for this FD (poll
+				 * implementation).
+				 */
 				continue;
 			}
 
@@ -868,8 +872,9 @@ restart:
 				goto error;
 			} else if (revents & LPOLLIN) {
 				/*
-				 * Get allocated in this thread, enqueued to a global queue,
-				 * dequeued and freed in the worker thread.
+				 * Get allocated in this thread,
+				 * enqueued to a global queue, dequeued
+				 * and freed in the worker thread.
 				 */
 				int val = 1;
 				struct relay_connection *new_conn;
@@ -911,8 +916,9 @@ restart:
 						 &new_conn->qnode);
 
 				/*
-				 * Wake the dispatch queue futex. Implicit memory barrier with
-				 * the exchange in cds_wfcq_enqueue.
+				 * Wake the dispatch queue futex.
+				 * Implicit memory barrier with the
+				 * exchange in cds_wfcq_enqueue.
 				 */
 				futex_nto1_wake(&relay_conn_queue.futex);
 			}
@@ -993,9 +999,10 @@ static void *relay_thread_dispatcher(void *data)
 			DBG("Dispatching request waiting on sock %d", new_conn->sock->fd);
 
 			/*
-			 * Inform worker thread of the new request. This call is blocking
-			 * so we can be assured that the data will be read at some point in
-			 * time or wait to the end of the world :)
+			 * Inform worker thread of the new request. This
+			 * call is blocking so we can be assured that
+			 * the data will be read at some point in time
+			 * or wait to the end of the world :)
 			 */
 			ret = lttng_write(relay_conn_pipe[1], &new_conn, sizeof(new_conn));
 			if (ret < 0) {
@@ -1605,9 +1612,10 @@ end_no_session:
 /*
  * Wait for the control socket to reach a quiescent state.
  *
- * Note that for now, when receiving this command from the session daemon, this
- * means that every subsequent commands or data received on the control socket
- * has been handled. So, this is why we simply return OK here.
+ * Note that for now, when receiving this command from the session
+ * daemon, this means that every subsequent commands or data received on
+ * the control socket has been handled. So, this is why we simply return
+ * OK here.
  */
 static int relay_quiescent_control(struct lttcomm_relayd_hdr *recv_hdr,
 		struct relay_connection *conn)
@@ -1662,9 +1670,10 @@ end_no_session:
 }
 
 /*
- * Initialize a data pending command. This means that a client is about to ask
- * for data pending for each stream he/she holds. Simply iterate over all
- * streams of a session and set the data_pending_check_done flag.
+ * Initialize a data pending command. This means that a client is about
+ * to ask for data pending for each stream he/she holds. Simply iterate
+ * over all streams of a session and set the data_pending_check_done
+ * flag.
  *
  * This command returns to the client a LTTNG_OK code.
  */
@@ -1705,9 +1714,10 @@ static int relay_begin_data_pending(struct lttcomm_relayd_hdr *recv_hdr,
 	session_id = be64toh(msg.session_id);
 
 	/*
-	 * Iterate over all streams to set the begin data pending flag. For now, the
-	 * streams are indexed by stream handle so we have to iterate over all
-	 * streams to find the one associated with the right session_id.
+	 * Iterate over all streams to set the begin data pending flag.
+	 * For now, the streams are indexed by stream handle so we have
+	 * to iterate over all streams to find the one associated with
+	 * the right session_id.
 	 */
 	rcu_read_lock();
 	cds_lfht_for_each_entry(relay_streams_ht->ht, &iter.iter, stream,
@@ -1740,11 +1750,11 @@ end_no_session:
 }
 
 /*
- * End data pending command. This will check, for a given session id, if each
- * stream associated with it has its data_pending_check_done flag set. If not,
- * this means that the client lost track of the stream but the data is still
- * being streamed on our side. In this case, we inform the client that data is
- * inflight.
+ * End data pending command. This will check, for a given session id, if
+ * each stream associated with it has its data_pending_check_done flag
+ * set. If not, this means that the client lost track of the stream but
+ * the data is still being streamed on our side. In this case, we inform
+ * the client that data is inflight.
  *
  * Return to the client if there is data in flight or not with a ret_code.
  */
@@ -1782,7 +1792,10 @@ static int relay_end_data_pending(struct lttcomm_relayd_hdr *recv_hdr,
 
 	session_id = be64toh(msg.session_id);
 
-	/* Iterate over all streams to see if the begin data pending flag is set. */
+	/*
+	 * Iterate over all streams to see if the begin data pending
+	 * flag is set.
+	 */
 	rcu_read_lock();
 	cds_lfht_for_each_entry(relay_streams_ht->ht, &iter.iter, stream,
 			node.node) {
