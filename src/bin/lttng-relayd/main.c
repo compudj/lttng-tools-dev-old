@@ -2212,10 +2212,12 @@ static int relay_process_data(struct relay_connection *conn)
 		vstream = viewer_stream_get_by_id(stream->stream_handle);
 		if (vstream) {
 			pthread_mutex_lock(&vstream->lock);
-			ret = utils_rotate_stream_file(stream->path_name, stream->channel_name,
-					stream->tracefile_size, stream->tracefile_count,
-					relayd_uid, relayd_gid, stream->stream_fd->fd,
-					&stream->current_tracefile_id, &stream->stream_fd->fd);
+			ret = utils_rotate_stream_file(stream->path_name,
+				stream->channel_name, stream->tracefile_size,
+				stream->tracefile_count, relayd_uid,
+				relayd_gid, stream->stream_fd->fd,
+				&stream->current_tracefile_id,
+				&stream->stream_fd->fd);
 			pthread_mutex_unlock(&vstream->lock);
 			viewer_stream_put(vstream);
 			if (ret < 0) {
@@ -2223,14 +2225,17 @@ static int relay_process_data(struct relay_connection *conn)
 				goto end_stream_unlock;
 			}
 		}
-		/* Reset current size because we just performed a stream rotation. */
+		/*
+		 * Reset current size because we just performed a stream
+		 * rotation.
+		 */
 		stream->tracefile_size_current = 0;
 		rotate_index = 1;
 	}
 
 	/*
-	 * Index are handled in protocol version 2.4 and above. Also, snapshot and
-	 * index are NOT supported.
+	 * Index are handled in protocol version 2.4 and above. Also,
+	 * snapshot and index are NOT supported.
 	 */
 	if (session->minor >= 4 && !session->snapshot) {
 		ret = handle_index_data(stream, net_seq_num, rotate_index);
@@ -2250,12 +2255,13 @@ static int relay_process_data(struct relay_connection *conn)
 	DBG2("Relay wrote %zd bytes to tracefile for stream id %" PRIu64,
 			size_ret, stream->stream_handle);
 
-	ret = write_padding_to_file(stream->stream_fd->fd, be32toh(data_hdr.padding_size));
+	ret = write_padding_to_file(stream->stream_fd->fd,
+		be32toh(data_hdr.padding_size));
 	if (ret < 0) {
 		goto end_stream_unlock;
 	}
-	stream->tracefile_size_current += data_size + be32toh(data_hdr.padding_size);
-
+	stream->tracefile_size_current +=
+		data_size + be32toh(data_hdr.padding_size);
 	stream->prev_seq = net_seq_num;
 
 end_stream_unlock:
@@ -2369,9 +2375,9 @@ restart:
 		nb_fd = ret;
 
 		/*
-		 * Process control. The control connection is prioritised so we
-		 * don't starve it with high throughput tracing data on the data
-		 * connection.
+		 * Process control. The control connection is
+		 * prioritised so we don't starve it with high
+		 * throughput tracing data on the data connection.
 		 */
 		for (i = 0; i < nb_fd; i++) {
 			/* Fetch once the poll data */
@@ -2381,7 +2387,10 @@ restart:
 			health_code_update();
 
 			if (!revents) {
-				/* No activity for this FD (poll implementation). */
+				/*
+				 * No activity for this FD (poll
+				 * implementation).
+				 */
 				continue;
 			}
 
