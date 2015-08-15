@@ -115,7 +115,7 @@ struct relay_stream {
 	 */
 	bool in_recv_list;
 	struct cds_list_head recv_node;
-	bool published;
+	bool published;	/* Protected by session lock. */
 	/*
 	 * Node of stream within global stream hash table.
 	 */
@@ -132,7 +132,7 @@ struct relay_stream *stream_get_by_id(uint64_t stream_id);
 bool stream_get(struct relay_stream *stream);
 void stream_put(struct relay_stream *stream);
 void stream_close(struct relay_stream *stream);
-
 void stream_publish(struct relay_stream *stream);
+void print_relay_streams(void);
 
 #endif /* _STREAM_H */

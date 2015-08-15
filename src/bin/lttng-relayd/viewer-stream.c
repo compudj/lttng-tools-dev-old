@@ -30,7 +30,6 @@ static void viewer_stream_destroy(struct relay_viewer_stream *vstream)
 	free(vstream->path_name);
 	free(vstream->channel_name);
 	free(vstream);
-	//ERR("XXX free vstream");
 }
 
 static void viewer_stream_destroy_rcu(struct rcu_head *head)
@@ -281,7 +280,12 @@ int viewer_stream_rotate(struct relay_viewer_stream *vstream)
 	}
 
 	new_id = (vstream->current_tracefile_id + 1) % stream->tracefile_count;
-	//ERR("XXX stream handle %" PRIu64 " new_id %" PRIu64 " tfcount %" PRIu64 " oldestid %" PRIu64 " isnewidreadable %" PRIu64, stream->stream_handle, new_id, stream->tracefile_count, stream->oldest_tracefile_id, viewer_stream_is_tracefile_id_readable(vstream, new_id));
+	DBG("viewer_stream_rotate: stream handle %" PRIu64
+		" new_id %" PRIu64 " tfcount %" PRIu64
+		" oldestid %" PRIu64 " isnewidreadable %" PRIu64,
+		stream->stream_handle, new_id, stream->tracefile_count,
+		stream->oldest_tracefile_id,
+		viewer_stream_is_tracefile_id_readable(vstream, new_id));
 	if (!viewer_stream_is_tracefile_id_readable(vstream, new_id)) {
 		new_id = stream->oldest_tracefile_id;
 	}
@@ -314,3 +318,27 @@ int viewer_stream_rotate(struct relay_viewer_stream *vstream)
 end:
 	return ret;
 }
+
+void print_viewer_streams(void)
+{
+	struct lttng_ht_iter iter;
+	struct relay_viewer_stream *vstream;
+
+	rcu_read_lock();
+	cds_lfht_for_each_entry(viewer_streams_ht->ht, &iter.iter, vstream,
+			stream_n.node) {
+		if (!viewer_stream_get(vstream)) {
+			continue;
+		}
+		DBG("vstream %p refcount %ld stream %" PRIu64 " trace %" PRIu64
+			" session %" PRIu64,
+			vstream,
+			vstream->ref.refcount,
+			vstream->stream->stream_handle,
+			vstream->stream->trace->id,
+			vstream->stream->trace->session->id);
+		viewer_stream_put(vstream);
+	}
+	rcu_read_unlock();
+}
+

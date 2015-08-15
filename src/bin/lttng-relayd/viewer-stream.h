@@ -77,6 +77,6 @@ void viewer_stream_put(struct relay_viewer_stream *vstream);
 int viewer_stream_rotate(struct relay_viewer_stream *vstream);
 bool viewer_stream_is_tracefile_id_readable(struct relay_viewer_stream *vstream,
 		uint64_t id);
-
+void print_viewer_streams(void);
 
 #endif /* _VIEWER_STREAM_H */

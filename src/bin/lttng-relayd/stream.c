@@ -146,6 +146,8 @@ struct relay_stream *stream_create(struct ctf_trace *trace,
 		stream->is_metadata = 1;
 	}
 
+	stream->in_recv_list = true;
+
 	/*
 	 * Add the stream in the recv list of the session. Once the end stream
 	 * message is received, all session streams are published.
@@ -155,14 +157,11 @@ struct relay_stream *stream_create(struct ctf_trace *trace,
 	session->stream_count++;
 	pthread_mutex_unlock(&session->recv_list_lock);
 
-	if (stream->is_metadata) {
-		/*
-		 * Session daemon expects metadata to be published
-		 * without issuing any streams sent cmd in snapshot
-		 * mode.
-		 */
-		stream_publish(stream);
-	}
+	/*
+	 * Both in the ctf_trace object and the global stream ht since the data
+	 * side of the relayd does not have the concept of session.
+	 */
+	lttng_ht_add_unique_u64(relay_streams_ht, &stream->node);
 
 	DBG("Relay new stream added %s with ID %" PRIu64, stream->channel_name,
 			stream->stream_handle);
@@ -189,6 +188,9 @@ error_no_alloc:
 	return NULL;
 }
 
+/*
+ * Called with the session lock held.
+ */
 void stream_publish(struct relay_stream *stream)
 {
 	struct relay_session *session;
@@ -207,12 +209,6 @@ void stream_publish(struct relay_stream *stream)
 	}
 	pthread_mutex_unlock(&session->recv_list_lock);
 
-	/*
-	 * Both in the ctf_trace object and the global stream ht since the data
-	 * side of the relayd does not have the concept of session.
-	 */
-	lttng_ht_add_unique_u64(relay_streams_ht, &stream->node);
-
 	pthread_mutex_lock(&stream->trace->stream_list_lock);
 	cds_list_add_rcu(&stream->stream_node, &stream->trace->stream_list);
 	pthread_mutex_unlock(&stream->trace->stream_list_lock);
@@ -224,13 +220,11 @@ unlock:
 
 /*
  * Only called from destroy. No stream lock needed, since there is a
- * single user at this point.
+ * single user at this point. This is ensured by having the refcount
+ * reaching 0.
  */
 static void stream_unpublish(struct relay_stream *stream)
 {
-	int ret;
-	struct lttng_ht_iter iter;
-
 	if (!stream->published) {
 		return;
 	}
@@ -238,9 +232,6 @@ static void stream_unpublish(struct relay_stream *stream)
 	cds_list_del_rcu(&stream->stream_node);
 	pthread_mutex_unlock(&stream->trace->stream_list_lock);
 
-	iter.iter.node = &stream->node.node;
-	ret = lttng_ht_del(relay_streams_ht, &iter);
-	assert(!ret);
 	stream->published = false;
 }
 
@@ -267,6 +258,8 @@ static void stream_release(struct urcu_ref *ref)
 	struct relay_stream *stream =
 		caa_container_of(ref, struct relay_stream, ref);
 	struct relay_session *session;
+	int ret;
+	struct lttng_ht_iter iter;
 
 	session = stream->trace->session;
 
@@ -279,6 +272,10 @@ static void stream_release(struct urcu_ref *ref)
 		stream->in_recv_list = false;
 	}
 	pthread_mutex_unlock(&session->recv_list_lock);
+
+	iter.iter.node = &stream->node.node;
+	ret = lttng_ht_del(relay_streams_ht, &iter);
+	assert(!ret);
 
 	stream_unpublish(stream);
 
@@ -325,6 +322,30 @@ void stream_put(struct relay_stream *stream)
 
 void stream_close(struct relay_stream *stream)
 {
+	DBG("closing stream %" PRIu64, stream->stream_handle);
 	relay_index_close_all(stream);
 	stream_put(stream);
+}
+
+void print_relay_streams(void)
+{
+	struct lttng_ht_iter iter;
+	struct relay_stream *stream;
+
+	rcu_read_lock();
+	cds_lfht_for_each_entry(relay_streams_ht->ht, &iter.iter, stream,
+			node.node) {
+		if (!stream_get(stream)) {
+			continue;
+		}
+		DBG("stream %p refcount %ld stream %" PRIu64 " trace %" PRIu64
+			" session %" PRIu64,
+			stream,
+			stream->ref.refcount,
+			stream->stream_handle,
+			stream->trace->id,
+			stream->trace->session->id);
+		stream_put(stream);
+	}
+	rcu_read_unlock();
 }

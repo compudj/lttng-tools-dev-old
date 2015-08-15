@@ -486,11 +486,24 @@ exit:
 	return retval;
 }
 
+static void print_global_objects(void)
+{
+	rcu_register_thread();
+
+	print_viewer_streams();
+	print_relay_streams();
+	print_sessions();
+
+	rcu_unregister_thread();
+}
+
 /*
  * Cleanup the daemon
  */
 static void relayd_cleanup(void)
 {
+	print_global_objects();
+
 	DBG("Cleaning up");
 
 	if (viewer_streams_ht)
@@ -1077,6 +1090,7 @@ static int relay_create_session(struct lttcomm_relayd_hdr *recv_hdr,
 		ret = -1;
 		goto send_reply;
 	}
+	assert(!conn->session);
 	conn->session = session;
 	DBG("Created session %" PRIu64, session->id);
 
@@ -1442,8 +1456,8 @@ static int relay_recv_metadata(struct lttcomm_relayd_hdr *recv_hdr,
 
 	metadata_stream->metadata_received +=
 		payload_size + be32toh(metadata_struct->padding_size);
-	//ERR("XXX5 meta recv updated %" PRIu64, metadata_stream->metadata_received);
-	DBG2("Relay metadata written");
+	DBG2("Relay metadata written. Updated metadata_received %" PRIu64,
+		metadata_stream->metadata_received);
 
 end_put:
 	pthread_mutex_unlock(&metadata_stream->lock);
@@ -2042,8 +2056,8 @@ static int handle_index_data(struct relay_stream *stream, uint64_t net_seq_num,
 	/* Get data offset because we are about to update the index. */
 	data_offset = htobe64(stream->tracefile_size_current);
 
-	//ERR("XXX stream handle %" PRIu64 " data offset %" PRIu64,
-	//	stream->stream_handle, stream->tracefile_size_current);
+	DBG("handle_index_data: stream %" PRIu64 " data offset %" PRIu64,
+		stream->stream_handle, stream->tracefile_size_current);
 
 	/*
 	 * Lookup for an existing index for that stream id/sequence
@@ -2524,12 +2538,12 @@ error:
 			destroy_conn,
 			sock_n.node) {
 		health_code_update();
-		if (!connection_get(destroy_conn)) {
-			continue;
-		}
+		/*
+		 * No need to grab another ref, because we own
+		 * destroy_conn.
+		 */
 		relay_thread_close_connection(&events, destroy_conn->sock->fd,
 			destroy_conn);
-		connection_put(destroy_conn);
 	}
 	rcu_read_unlock();
 

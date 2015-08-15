@@ -301,9 +301,15 @@ int make_viewer_streams(struct relay_session *session,
 			if (!stream_get(stream)) {
 				continue;
 			}
+			/*
+			 * stream published is protected by the session
+			 * lock.
+			 */
+			if (!stream->published) {
+				goto next;
+			}
 			vstream = viewer_stream_get_by_id(stream->stream_handle);
 			if (!vstream) {
-				//ERR("XXX2 makevstream NOT found sess %p streamhandle %" PRIu64, session, stream->stream_handle);
 				vstream = viewer_stream_create(stream, seek_t);
 				if (!vstream) {
 					ret = -1;
@@ -317,7 +323,6 @@ int make_viewer_streams(struct relay_session *session,
 					(*nb_created)++;
 				}
 			} else {
-				//ERR("XXX2 makevstream found sess %p streamhandle %" PRIu64, session, stream->stream_handle);
 				if (!vstream->sent_flag && nb_unsent) {
 					/* Update number of unsent stream counter. */
 					(*nb_unsent)++;
@@ -328,6 +333,7 @@ int make_viewer_streams(struct relay_session *session,
 			if (nb_total) {
 				(*nb_total)++;
 			}
+		next:
 			stream_put(stream);
 		}
 		ctf_trace_put(ctf_trace);
@@ -1285,9 +1291,9 @@ int viewer_get_next_index(struct relay_connection *conn)
 	read_ret = lttng_read(vstream->index_fd->fd, &packet_index,
 			sizeof(packet_index));
 	if (read_ret < sizeof(packet_index)) {
-		//ERR("Relay reading index file %d", vstream->index_fd->fd);
+		ERR("Relay reading index file %d returned %zd",
+			vstream->index_fd->fd, read_ret);
 		viewer_index.status = htobe32(LTTNG_VIEWER_INDEX_ERR);
-		//abort();	//XXX
 		goto send_reply;
 	} else {
 		viewer_index.status = htobe32(LTTNG_VIEWER_INDEX_OK);
@@ -1297,9 +1303,9 @@ int viewer_get_next_index(struct relay_connection *conn)
 	/*
 	 * Indexes are stored in big endian, no need to switch before sending.
 	 */
-	//ERR("XXX10 for stream %" PRIu64 " sending viewer index %" PRIu64,
-	//	rstream->stream_handle,
-	//	be64toh(packet_index.offset));
+	DBG("Sending viewer index for stream %" PRIu64 " offset %" PRIu64,
+		rstream->stream_handle,
+		be64toh(packet_index.offset));
 	viewer_index.offset = packet_index.offset;
 	viewer_index.packet_size = packet_index.packet_size;
 	viewer_index.content_size = packet_index.content_size;
@@ -1315,9 +1321,10 @@ send_reply:
 	if (metadata_viewer_stream) {
 		pthread_mutex_lock(&metadata_viewer_stream->stream->lock);
 		pthread_mutex_lock(&metadata_viewer_stream->lock);
-		//ERR("XXX3 get next index: recv %" PRIu64 " sent %" PRIu64,
-		//	metadata_viewer_stream->stream->metadata_received,
-		//	metadata_viewer_stream->metadata_sent);
+		DBG("get next index metadata check: recv %" PRIu64
+				" sent %" PRIu64,
+			metadata_viewer_stream->stream->metadata_received,
+			metadata_viewer_stream->metadata_sent);
 		if (!metadata_viewer_stream->stream->metadata_received ||
 				metadata_viewer_stream->stream->metadata_received >
 					metadata_viewer_stream->metadata_sent) {
@@ -1404,9 +1411,9 @@ int viewer_get_packet(struct relay_connection *conn)
 
 		pthread_mutex_lock(&metadata_viewer_stream->stream->lock);
 		pthread_mutex_lock(&metadata_viewer_stream->lock);
-		//ERR("XXX3 get packet: recv %" PRIu64 " sent %" PRIu64,
-		//	metadata_viewer_stream->stream->metadata_received,
-		//	metadata_viewer_stream->metadata_sent);
+		DBG("get packet metadata check: recv %" PRIu64 " sent %" PRIu64,
+			metadata_viewer_stream->stream->metadata_received,
+			metadata_viewer_stream->metadata_sent);
 		if (!metadata_viewer_stream->stream->metadata_received ||
 				metadata_viewer_stream->stream->metadata_received >
 					metadata_viewer_stream->metadata_sent) {
@@ -1622,8 +1629,6 @@ int viewer_get_metadata(struct relay_connection *conn)
 	if (vstream->metadata_sent == vstream->stream->metadata_received
 			&& vstream->stream->closed) {
 		/* Release ownership for the viewer metadata stream. */
-		ERR("live putting ownership of vstream %" PRIu64,
-			vstream->stream->stream_handle);
 		viewer_stream_put(vstream);
 	}
 

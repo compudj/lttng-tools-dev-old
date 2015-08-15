@@ -185,8 +185,11 @@ int session_close(struct relay_session *session)
 	int ret = 0;
 	struct ctf_trace *trace;
 	struct lttng_ht_iter iter;
+	struct relay_stream *stream;
 
 	pthread_mutex_lock(&session->lock);
+	DBG("closing session %" PRIu64 ": is conn already closed %d",
+		session->id, session->connection_closed);
 	if (session->connection_closed) {
 		ret = -1;
 		goto unlock;
@@ -206,6 +209,10 @@ unlock:
 			goto rcu_unlock;
 		}
 	}
+	cds_list_for_each_entry_rcu(stream, &session->recv_list,
+			recv_node) {
+		stream_close(stream);
+	}
 rcu_unlock:
 	rcu_read_unlock();
 	if (ret) {
@@ -214,4 +221,24 @@ rcu_unlock:
 	/* Put self-reference from create. */
 	session_put(session);
 	return 0;
+}
+
+void print_sessions(void)
+{
+	struct lttng_ht_iter iter;
+	struct relay_session *session;
+
+	rcu_read_lock();
+	cds_lfht_for_each_entry(sessions_ht->ht, &iter.iter, session,
+			session_n.node) {
+		if (!session_get(session)) {
+			continue;
+		}
+		DBG("session %p refcount %ld session %" PRIu64,
+			session,
+			session->ref.refcount,
+			session->id);
+		session_put(session);
+	}
+	rcu_read_unlock();
 }

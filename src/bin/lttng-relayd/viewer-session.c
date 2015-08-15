@@ -96,36 +96,27 @@ static int viewer_session_detach(struct relay_viewer_session *vsession,
 void viewer_session_destroy(struct relay_viewer_session *vsession)
 {
 	free(vsession);
-	//ERR("XXX destroy vsession");
 }
 
 void viewer_session_close(struct relay_viewer_session *vsession)
 {
 	struct relay_session *session;
 
-	ERR("viewer_session_close for vsess %p", vsession)
 	rcu_read_lock();
 	cds_list_for_each_entry_rcu(session,
 			&vsession->session_list, viewer_session_node) {
 		struct lttng_ht_iter iter;
 		struct relay_viewer_stream *vstream;
 
-		ERR("viewer_session_close for sess %p", session)
 		/*
 		 * TODO: improvement: create more efficient list of
 		 * vstream per session.
 		 */
 		cds_lfht_for_each_entry(viewer_streams_ht->ht, &iter.iter,
 				vstream, stream_n.node) {
-			//ERR("viewer_session_close for vstream %p", vstream);
 			if (!viewer_stream_get(vstream)) {
 				continue;
 			}
-			//ERR("XXX cmp vstream sess %p vs session %p for stream %" PRIu64 " ismeta %d",
-			//	vstream->stream->trace->session,
-			//	session,
-			//	vstream->stream->stream_handle,
-			//	vstream->stream->is_metadata);
 			if (vstream->stream->trace->session != session) {
 				viewer_stream_put(vstream);
 				continue;
