@@ -2150,8 +2150,6 @@ static int relay_process_data(struct relay_connection *conn)
 	uint32_t data_size;
 	struct relay_session *session;
 
-	assert(conn);
-
 	ret = conn->sock->ops->recvmsg(conn->sock, &data_hdr,
 			sizeof(struct lttcomm_relayd_data_hdr), 0);
 	if (ret <= 0) {

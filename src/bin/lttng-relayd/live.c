@@ -1119,12 +1119,14 @@ static int check_index_status(struct relay_viewer_stream *vstream,
 	int ret;
 
 	if (trace->session->connection_closed
-			&& rstream->total_index_received == vstream->last_sent_index) {
+			&& rstream->total_index_received
+				== vstream->last_sent_index) {
 		/* Last index sent and session connection is closed. */
 		index->status = htobe32(LTTNG_VIEWER_INDEX_HUP);
 		goto hup;
 	} else if (rstream->beacon_ts_end != -1ULL &&
-				rstream->total_index_received == vstream->last_sent_index) {
+			rstream->total_index_received
+				== vstream->last_sent_index) {
 		/*
 		 * We've received a synchronization beacon and the last index
 		 * available has been sent, the index for now is inactive.
@@ -1137,7 +1139,8 @@ static int check_index_status(struct relay_viewer_stream *vstream,
 		/* This actually checks the case where recv ==  last_sent. */
 		index->status = htobe32(LTTNG_VIEWER_INDEX_RETRY);
 		goto index_ready;
-	} else if (!viewer_stream_is_tracefile_id_readable(vstream, vstream->current_tracefile_id)) {
+	} else if (!viewer_stream_is_tracefile_id_readable(vstream,
+			vstream->current_tracefile_id)) {
 		/*
 		 * The producer has overwritten our current file. We
 		 * need to rotate.
@@ -1242,7 +1245,8 @@ int viewer_get_next_index(struct relay_connection *conn)
 	ctf_trace = rstream->trace;
 
 	/* metadata_viewer_stream may be NULL. */
-	metadata_viewer_stream = ctf_trace_get_viewer_metadata_stream(ctf_trace);
+	metadata_viewer_stream =
+		ctf_trace_get_viewer_metadata_stream(ctf_trace);
 
 	memset(&viewer_index, 0, sizeof(viewer_index));
 
