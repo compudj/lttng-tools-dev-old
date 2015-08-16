@@ -1292,6 +1292,43 @@ int viewer_get_next_index(struct relay_connection *conn)
 	/* At this point, ret MUST be 0 thus we continue with the get. */
 	assert(!ret);
 
+	/*
+	 * vstream->stream_fd may be NULL if it has been closed by
+	 * tracefile rotation, or if we are at the beginning of the
+	 * stream. We open the data stream file here to protect against
+	 * overwrite caused by tracefile rotation (in association with
+	 * unlink performed before overwrite).
+	 */
+	if (!vstream->stream_fd) {
+		char fullpath[PATH_MAX];
+
+		if (vstream->stream->tracefile_count > 0) {
+			ret = snprintf(fullpath, PATH_MAX, "%s/%s_%" PRIu64,
+					vstream->path_name,
+					vstream->channel_name,
+					vstream->current_tracefile_id);
+		} else {
+			ret = snprintf(fullpath, PATH_MAX, "%s/%s",
+					vstream->path_name,
+					vstream->channel_name);
+		}
+		if (ret < 0) {
+			goto error_put;
+		}
+		ret = open(fullpath, O_RDONLY);
+		if (ret < 0) {
+			PERROR("Relay opening trace file");
+			goto error_put;
+		}
+		vstream->stream_fd = stream_fd_create(ret);
+		if (!vstream->stream_fd) {
+			if (close(ret)) {
+				PERROR("close");
+			}
+			goto error_put;
+		}
+	}
+
 	ret = check_new_streams(conn);
 	if (ret < 0) {
 		viewer_index.status = htobe32(LTTNG_VIEWER_INDEX_ERR);
@@ -1443,46 +1480,16 @@ int viewer_get_packet(struct relay_connection *conn)
 		}
 	}
 
-	//TODO: what happens if packet content is overwritten between
-	//get index and get next packet associated with it ?
-
 	pthread_mutex_lock(&vstream->lock);
 	/*
-	 * First time we read this stream, we need open the tracefile,
-	 * we should only arrive here if an index has already been sent
-	 * to the viewer, so the tracefile must exist, if it does not it
-	 * is a fatal error.
+	 * The vstream->stream_fd used here has been opened by
+	 * get_next_index. It is opened there because this is what
+	 * allows us to grab a reference to the file with stream lock
+	 * held, thus protecting us against overwrite caused by
+	 * tracefile rotation. Since tracefile rotation unlinks the old
+	 * data file, we are ensured that we won't have our data
+	 * overwritten under us.
 	 */
-	if (!vstream->stream_fd) {
-		char fullpath[PATH_MAX];
-
-		if (vstream->stream->tracefile_count > 0) {
-			ret = snprintf(fullpath, PATH_MAX, "%s/%s_%" PRIu64,
-					vstream->path_name,
-					vstream->channel_name,
-					vstream->current_tracefile_id);
-		} else {
-			ret = snprintf(fullpath, PATH_MAX, "%s/%s",
-					vstream->path_name,
-					vstream->channel_name);
-		}
-		if (ret < 0) {
-			goto error;
-		}
-		ret = open(fullpath, O_RDONLY);
-		if (ret < 0) {
-			PERROR("Relay opening trace file");
-			goto error;
-		}
-		vstream->stream_fd = stream_fd_create(ret);
-		if (!vstream->stream_fd) {
-			if (close(ret)) {
-				PERROR("close");
-			}
-			goto error;
-		}
-	}
-
 	ret = check_new_streams(conn);
 	if (ret < 0) {
 		goto end_free;

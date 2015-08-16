@@ -231,12 +231,14 @@ void viewer_stream_put(struct relay_viewer_stream *vstream)
  * been overwritten.
  * Must be called with rstream and vstream locks held.
  */
-bool viewer_stream_is_tracefile_id_readable(struct relay_viewer_stream *vstream, uint64_t id)
+bool viewer_stream_is_tracefile_id_readable(struct relay_viewer_stream *vstream,
+		 uint64_t id)
 {
 	struct relay_stream *stream = vstream->stream;
 
 	if (stream->oldest_tracefile_id <= stream->current_tracefile_id) {
-		if (id >= stream->oldest_tracefile_id && id <= stream->current_tracefile_id) {
+		if (id >= stream->oldest_tracefile_id
+				&& id <= stream->current_tracefile_id) {
 			/* id is a readable file. */
 			return true;
 		} else {
@@ -244,7 +246,8 @@ bool viewer_stream_is_tracefile_id_readable(struct relay_viewer_stream *vstream,
 			return false;
 		}
 	} else {
-		if (id >= stream->oldest_tracefile_id || id <= stream->current_tracefile_id) {
+		if (id >= stream->oldest_tracefile_id
+				|| id <= stream->current_tracefile_id) {
 			/* id is a readable file. */
 			return true;
 		} else {

@@ -54,7 +54,8 @@ struct relay_index {
 
 	/*
 	 * Node within indexes_ht that corresponds to this struct
-	 * relay_index. Indexed by net_seq_num.
+	 * relay_index. Indexed by net_seq_num, which is unique for this
+	 * index across the stream.
 	 */
 	struct lttng_ht_node_u64 index_n;
 	struct rcu_head rcu_node;	/* For call_rcu teardown. */
