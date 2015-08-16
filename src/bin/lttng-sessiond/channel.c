@@ -255,6 +255,7 @@ end:
 
 /*
  * Create UST channel for session and domain.
+ * Called with session lock held.
  */
 int channel_ust_create(struct ltt_ust_session *usess,
 		struct lttng_channel *attr, enum lttng_buffer_type type)

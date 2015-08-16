@@ -3754,6 +3754,7 @@ int ust_app_disable_event_glb(struct ltt_ust_session *usess,
 
 /*
  * For a specific UST session, create the channel for all registered apps.
+ * Called with session lock held.
  */
 int ust_app_create_channel_glb(struct ltt_ust_session *usess,
 		struct ltt_ust_channel *uchan)
@@ -3810,7 +3811,7 @@ int ust_app_create_channel_glb(struct ltt_ust_session *usess,
 
 		pthread_mutex_lock(&ua_sess->lock);
 
-		if (ua_sess->deleted) {
+		if (ua_sess->deleted || !ua_sess->init_done) {
 			pthread_mutex_unlock(&ua_sess->lock);
 			continue;
 		}
@@ -3884,7 +3885,7 @@ int ust_app_enable_event_glb(struct ltt_ust_session *usess,
 
 		pthread_mutex_lock(&ua_sess->lock);
 
-		if (ua_sess->deleted) {
+		if (ua_sess->deleted || !ua_sess->init_done) {
 			pthread_mutex_unlock(&ua_sess->lock);
 			continue;
 		}
@@ -3956,7 +3957,7 @@ int ust_app_create_event_glb(struct ltt_ust_session *usess,
 
 		pthread_mutex_lock(&ua_sess->lock);
 
-		if (ua_sess->deleted) {
+		if (ua_sess->deleted || !ua_sess->init_done) {
 			pthread_mutex_unlock(&ua_sess->lock);
 			continue;
 		}
@@ -4012,7 +4013,7 @@ int ust_app_start_trace(struct ltt_ust_session *usess, struct ust_app *app)
 
 	pthread_mutex_lock(&ua_sess->lock);
 
-	if (ua_sess->deleted) {
+	if (ua_sess->deleted || !ua_sess->init_done) {
 		pthread_mutex_unlock(&ua_sess->lock);
 		goto end;
 	}
@@ -4117,7 +4118,7 @@ int ust_app_stop_trace(struct ltt_ust_session *usess, struct ust_app *app)
 
 	pthread_mutex_lock(&ua_sess->lock);
 
-	if (ua_sess->deleted) {
+	if (ua_sess->deleted || !ua_sess->init_done) {
 		pthread_mutex_unlock(&ua_sess->lock);
 		goto end_no_session;
 	}
@@ -4202,8 +4203,8 @@ int ust_app_flush_app_session(struct ust_app *app,
 
 	pthread_mutex_lock(&ua_sess->lock);
 
-	if (ua_sess->deleted) {
-		goto end_deleted;
+	if (ua_sess->deleted || !ua_sess->init_done) {
+		goto end;
 	}
 
 	health_code_update();
@@ -4235,7 +4236,7 @@ int ust_app_flush_app_session(struct ust_app *app,
 
 	health_code_update();
 
-end_deleted:
+end:
 	pthread_mutex_unlock(&ua_sess->lock);
 
 end_not_compatible:
@@ -4445,6 +4446,9 @@ int ust_app_destroy_trace_all(struct ltt_ust_session *usess)
 	return 0;
 }
 
+/*
+ * Called with session lock held.
+ */
 static
 void ust_app_global_create(struct ltt_ust_session *usess, struct ust_app *app)
 {
@@ -4473,6 +4477,9 @@ void ust_app_global_create(struct ltt_ust_session *usess, struct ust_app *app)
 		pthread_mutex_unlock(&ua_sess->lock);
 		goto end;
 	}
+
+	assert(!ua_sess->init_done);
+	ua_sess->init_done = true;	/* Protected by session lock. */
 
 	/*
 	 * We can iterate safely here over all UST app session since the create ust
@@ -4523,6 +4530,7 @@ void ust_app_global_create(struct ltt_ust_session *usess, struct ust_app *app)
 
 		DBG2("UST trace started for app pid %d", app->pid);
 	}
+
 end:
 	/* Everything went well at this point. */
 	return;
@@ -4617,7 +4625,7 @@ int ust_app_add_ctx_channel_glb(struct ltt_ust_session *usess,
 
 		pthread_mutex_lock(&ua_sess->lock);
 
-		if (ua_sess->deleted) {
+		if (ua_sess->deleted || !ua_sess->init_done) {
 			pthread_mutex_unlock(&ua_sess->lock);
 			continue;
 		}
@@ -4681,7 +4689,7 @@ int ust_app_enable_event_pid(struct ltt_ust_session *usess,
 
 	pthread_mutex_lock(&ua_sess->lock);
 
-	if (ua_sess->deleted) {
+	if (ua_sess->deleted || !ua_sess->init_done) {
 		ret = 0;
 		goto end_unlock;
 	}

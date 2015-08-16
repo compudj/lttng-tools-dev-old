@@ -183,6 +183,12 @@ struct ust_app_session {
 	int handle;   /* used has unique identifier for app session */
 
 	bool deleted;	/* Session deleted flag. Check with lock held. */
+	/*
+	 * Is app session updated after creation ? Consistency protected
+	 * by the *session* lock, because this state needs to be
+	 * consistent between session creation and commands.
+	 */
+	bool init_done;
 
 	/*
 	 * Tracing session ID. Multiple ust app session can have the same tracing
